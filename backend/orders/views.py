@@ -204,17 +204,32 @@ class OrderEventSerializer(serializers.ModelSerializer):
         fields = ["status", "status_label", "note", "at"]
 
 
+class LatestPaymentSerializer(serializers.Serializer):
+    status = serializers.CharField()
+    status_label = serializers.CharField(source="get_status_display")
+    reference = serializers.CharField()
+    reject_reason = serializers.CharField()
+    submitted_at = serializers.DateTimeField()
+
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    # The newest UPI proof, so the app can show "checking" or "rejected, try again".
+    payment = serializers.SerializerMethodField()
     events = OrderEventSerializer(many=True, read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     can_cancel = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
-        fields = ["number", "status", "status_label", "can_cancel", "payment_method", "items", "events",
+        fields = ["number", "status", "status_label", "can_cancel", "payment_method", "payment", "items", "events",
                   "ship_name", "ship_phone", "ship_line1", "ship_line2", "ship_landmark", "ship_city",
                   "ship_state", "ship_pincode", "subtotal", "shipping_fee", "cod_fee", "total", "created_at"]
+
+    @extend_schema_field(LatestPaymentSerializer(allow_null=True))
+    def get_payment(self, order):
+        proof = next(iter(order.payment_proofs.all()), None)
+        return LatestPaymentSerializer(proof).data if proof else None
 
     def get_can_cancel(self, order) -> bool:
         return order.status in CUSTOMER_CANCELLABLE
@@ -313,4 +328,4 @@ def cancel_order(request, number):
 
 
 def my_orders(request):
-    return request.user.orders.prefetch_related("items", "events")
+    return request.user.orders.prefetch_related("items", "events", "payment_proofs")

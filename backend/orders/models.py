@@ -119,3 +119,29 @@ class OrderEvent(models.Model):
 
     def __str__(self):
         return f"{self.order} → {self.status}"
+
+
+class PaymentProof(models.Model):
+    """A customer's proof of a UPI payment, checked by hand against the shop's bank app."""
+
+    class Status(models.TextChoices):
+        SUBMITTED = "submitted", "Waiting for check"
+        VERIFIED = "verified", "Verified"
+        REJECTED = "rejected", "Rejected"
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="payment_proofs")
+    # The UPI transaction reference (UTR) shown in the customer's payment app.
+    reference = models.CharField(max_length=30, blank=True, default="", db_index=True)
+    screenshot = models.ImageField(upload_to="payments/", blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.SUBMITTED)
+    reject_reason = models.CharField(max_length=200, blank=True, default="")
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                    related_name="+")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-submitted_at", "-id"]
+
+    def __str__(self):
+        return f"{self.order} payment {self.reference or self.pk}"

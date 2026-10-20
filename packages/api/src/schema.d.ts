@@ -292,6 +292,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders/{number}/payment/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Send proof of a UPI payment: the reference (UTR), a screenshot, or both. */
+        post: operations["v1_orders_payment_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/product-images/": {
         parameters: {
             query?: never;
@@ -435,6 +452,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/payments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The payment check queue: ?status=submitted shows what still needs checking, oldest last. */
+        get: operations["v1_staff_payments_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/payments/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The payment check queue: ?status=submitted shows what still needs checking, oldest last. */
+        get: operations["v1_staff_payments_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/payments/{id}/reject/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The payment can't be found; the customer is asked to send proof again. */
+        post: operations["v1_staff_payments_reject_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/payments/{id}/verify/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The money is in the shop's account: confirm the order. */
+        post: operations["v1_staff_payments_verify_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/variants/": {
         parameters: {
             query?: never;
@@ -558,6 +643,14 @@ export interface components {
             /** Format: email */
             email: string;
         };
+        LatestPayment: {
+            status: string;
+            status_label: string;
+            reference: string;
+            reject_reason: string;
+            /** Format: date-time */
+            submitted_at: string;
+        };
         LoginResponse: {
             access: string;
             refresh: string;
@@ -568,10 +661,11 @@ export interface components {
         };
         Order: {
             number?: string;
-            status: components["schemas"]["StatusEnum"];
+            status: components["schemas"]["OrderStatusEnum"];
             readonly status_label: string;
             readonly can_cancel: boolean;
             payment_method: components["schemas"]["PaymentMethodEnum"];
+            readonly payment: components["schemas"]["LatestPayment"] | null;
             readonly items: components["schemas"]["OrderItem"][];
             readonly events: components["schemas"]["OrderEvent"][];
             ship_name: string;
@@ -594,7 +688,7 @@ export interface components {
             readonly created_at: string;
         };
         OrderEvent: {
-            status: components["schemas"]["StatusEnum"];
+            status: components["schemas"]["OrderStatusEnum"];
             readonly status_label: string;
             note?: string;
             /** Format: date-time */
@@ -618,6 +712,17 @@ export interface components {
             detail: string;
             problems: string[];
         };
+        /**
+         * @description * `payment_pending` - Waiting for UPI payment
+         *     * `confirmed` - Confirmed
+         *     * `packed` - Packed
+         *     * `shipped` - Shipped
+         *     * `delivered` - Delivered
+         *     * `cancelled` - Cancelled
+         *     * `returned` - Returned
+         * @enum {string}
+         */
+        OrderStatusEnum: "payment_pending" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled" | "returned";
         PaginatedProductImageList: {
             /** @example 123 */
             count: number;
@@ -662,6 +767,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["StaffOrder"][];
+        };
+        PaginatedStaffPaymentList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["StaffPayment"][];
         };
         PaginatedVariantList: {
             /** @example 123 */
@@ -735,6 +855,18 @@ export interface components {
          * @enum {string}
          */
         PaymentMethodEnum: "cod" | "upi";
+        PaymentProofRequest: {
+            reference?: string;
+            /** Format: binary */
+            screenshot?: string;
+        };
+        /**
+         * @description * `submitted` - Waiting for check
+         *     * `verified` - Verified
+         *     * `rejected` - Rejected
+         * @enum {string}
+         */
+        PaymentProofStatusEnum: "submitted" | "verified" | "rejected";
         Product: {
             readonly id: number;
             name: string;
@@ -803,6 +935,9 @@ export interface components {
             total: string;
             problems: string[];
         };
+        RejectRequest: {
+            reason: string;
+        };
         /**
          * @description * `customer` - Customer
          *     * `staff` - Staff
@@ -812,10 +947,11 @@ export interface components {
         RoleEnum: "customer" | "staff" | "admin";
         StaffOrder: {
             number?: string;
-            status: components["schemas"]["StatusEnum"];
+            status: components["schemas"]["OrderStatusEnum"];
             readonly status_label: string;
             readonly can_cancel: boolean;
             payment_method: components["schemas"]["PaymentMethodEnum"];
+            readonly payment: components["schemas"]["LatestPayment"] | null;
             readonly items: components["schemas"]["OrderItem"][];
             readonly events: components["schemas"]["OrderEvent"][];
             ship_name: string;
@@ -842,22 +978,29 @@ export interface components {
             /** Format: date-time */
             readonly updated_at: string;
         };
+        StaffPayment: {
+            readonly id: number;
+            reference?: string;
+            /** Format: uri */
+            screenshot?: string;
+            readonly status: components["schemas"]["PaymentProofStatusEnum"];
+            readonly status_label: string;
+            readonly reject_reason: string;
+            /** Format: date-time */
+            readonly submitted_at: string;
+            readonly order_number: string;
+            /** Format: decimal */
+            readonly order_total: string;
+            /** Format: email */
+            readonly customer_email: string;
+            /** Format: date-time */
+            reviewed_at?: string | null;
+        };
         StatusChangeRequest: {
-            status: components["schemas"]["StatusEnum"];
+            status: components["schemas"]["OrderStatusEnum"];
             /** @default  */
             note: string;
         };
-        /**
-         * @description * `payment_pending` - Waiting for UPI payment
-         *     * `confirmed` - Confirmed
-         *     * `packed` - Packed
-         *     * `shipped` - Shipped
-         *     * `delivered` - Delivered
-         *     * `cancelled` - Cancelled
-         *     * `returned` - Returned
-         * @enum {string}
-         */
-        StatusEnum: "payment_pending" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled" | "returned";
         TokenRefresh: {
             readonly access: string;
         };
@@ -1614,6 +1757,39 @@ export interface operations {
             };
         };
     };
+    v1_orders_payment_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["PaymentProofRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
     v1_product_images_list: {
         parameters: {
             query?: {
@@ -2025,6 +2201,124 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StaffOrder"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    v1_staff_payments_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /**
+                 * @description * `submitted` - Waiting for check
+                 *     * `verified` - Verified
+                 *     * `rejected` - Rejected
+                 */
+                status?: "rejected" | "submitted" | "verified";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedStaffPaymentList"];
+                };
+            };
+        };
+    };
+    v1_staff_payments_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this payment proof. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffPayment"];
+                };
+            };
+        };
+    };
+    v1_staff_payments_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this payment proof. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["RejectRequest"];
+                "multipart/form-data": components["schemas"]["RejectRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffPayment"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    v1_staff_payments_verify_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this payment proof. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffPayment"];
                 };
             };
             400: {

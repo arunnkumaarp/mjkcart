@@ -122,6 +122,10 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    "ENUM_NAME_OVERRIDES": {
+        "OrderStatusEnum": "orders.models.Order.Status",
+        "PaymentProofStatusEnum": "orders.models.PaymentProof.Status",
+    },
 }
 
 # Development prints emails to the console; set EMAIL_HOST etc. (Gmail or Brevo SMTP) to send them.

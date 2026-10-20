@@ -43,7 +43,7 @@ class StaffOrderViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = StaffOrderSerializer
     permission_classes = [IsStaffRole]
     lookup_field = "number"
-    queryset = Order.objects.select_related("user").prefetch_related("items", "events")
+    queryset = Order.objects.select_related("user").prefetch_related("items", "events", "payment_proofs")
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend, filters.SearchFilter]
     filterset_class = StaffOrderFilter
     search_fields = ["number", "user__email", "ship_name", "ship_phone", "ship_pincode"]

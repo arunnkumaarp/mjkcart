@@ -1,10 +1,11 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from . import staff, views
+from . import payments, staff, views
 
 router = DefaultRouter()
 router.register("staff/orders", staff.StaffOrderViewSet, basename="staff-order")
+router.register("staff/payments", payments.StaffPaymentViewSet, basename="staff-payment")
 
 urlpatterns = [
     path("cart/", views.cart, name="cart"),
@@ -15,4 +16,5 @@ urlpatterns = [
     path("orders/", views.orders, name="orders"),
     path("orders/<str:number>/", views.order_detail, name="order-detail"),
     path("orders/<str:number>/cancel/", views.cancel_order, name="order-cancel"),
+    path("orders/<str:number>/payment/", payments.submit_payment, name="order-payment"),
 ] + router.urls

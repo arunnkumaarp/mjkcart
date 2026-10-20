@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
 
-from .models import Cart, CartItem, Order, OrderEvent, OrderItem
+from .models import Cart, CartItem, Order, OrderEvent, OrderItem, PaymentProof
 from .status import StatusError, change_status
 
 
@@ -49,3 +49,12 @@ class OrderAdmin(admin.ModelAdmin):
                 messages.error(request, str(e))
         else:
             super().save_model(request, obj, form, change)
+
+
+@admin.register(PaymentProof)
+class PaymentProofAdmin(admin.ModelAdmin):
+    list_display = ["order", "reference", "status", "submitted_at", "reviewed_by"]
+    list_filter = ["status"]
+    search_fields = ["reference", "order__number"]
+    raw_id_fields = ["order"]
+    readonly_fields = ["reviewed_by", "reviewed_at"]
