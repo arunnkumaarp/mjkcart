@@ -275,6 +275,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders/{number}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Customers can cancel until the shop starts packing; the stock goes back. */
+        post: operations["v1_orders_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/product-images/": {
         parameters: {
             query?: never;
@@ -367,6 +384,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/orders/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description All orders for the shop team, newest first, with search by number, customer, phone or pincode. */
+        get: operations["v1_staff_orders_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/orders/{number}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description All orders for the shop team, newest first, with search by number, customer, phone or pincode. */
+        get: operations["v1_staff_orders_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/orders/{number}/status/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description All orders for the shop team, newest first, with search by number, customer, phone or pincode. */
+        post: operations["v1_staff_orders_status_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/variants/": {
         parameters: {
             query?: never;
@@ -437,6 +505,10 @@ export interface components {
             pincode: string;
             is_default?: boolean;
         };
+        CancelRequest: {
+            /** @default  */
+            reason: string;
+        };
         Cart: {
             readonly items: components["schemas"]["CartItem"][];
             readonly item_count: number;
@@ -498,8 +570,10 @@ export interface components {
             number?: string;
             status: components["schemas"]["StatusEnum"];
             readonly status_label: string;
+            readonly can_cancel: boolean;
             payment_method: components["schemas"]["PaymentMethodEnum"];
             readonly items: components["schemas"]["OrderItem"][];
+            readonly events: components["schemas"]["OrderEvent"][];
             ship_name: string;
             ship_phone: string;
             ship_line1: string;
@@ -518,6 +592,13 @@ export interface components {
             total: string;
             /** Format: date-time */
             readonly created_at: string;
+        };
+        OrderEvent: {
+            status: components["schemas"]["StatusEnum"];
+            readonly status_label: string;
+            note?: string;
+            /** Format: date-time */
+            readonly at: string;
         };
         OrderItem: {
             readonly id: number;
@@ -566,6 +647,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Product"][];
+        };
+        PaginatedStaffOrderList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["StaffOrder"][];
         };
         PaginatedVariantList: {
             /** @example 123 */
@@ -714,6 +810,43 @@ export interface components {
          * @enum {string}
          */
         RoleEnum: "customer" | "staff" | "admin";
+        StaffOrder: {
+            number?: string;
+            status: components["schemas"]["StatusEnum"];
+            readonly status_label: string;
+            readonly can_cancel: boolean;
+            payment_method: components["schemas"]["PaymentMethodEnum"];
+            readonly items: components["schemas"]["OrderItem"][];
+            readonly events: components["schemas"]["OrderEvent"][];
+            ship_name: string;
+            ship_phone: string;
+            ship_line1: string;
+            ship_line2?: string;
+            ship_landmark?: string;
+            ship_city: string;
+            ship_state: string;
+            ship_pincode: string;
+            /** Format: decimal */
+            subtotal: string;
+            /** Format: decimal */
+            shipping_fee: string;
+            /** Format: decimal */
+            cod_fee: string;
+            /** Format: decimal */
+            total: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: email */
+            readonly customer_email: string;
+            readonly next_statuses: string[];
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        StatusChangeRequest: {
+            status: components["schemas"]["StatusEnum"];
+            /** @default  */
+            note: string;
+        };
         /**
          * @description * `payment_pending` - Waiting for UPI payment
          *     * `confirmed` - Confirmed
@@ -1446,6 +1579,41 @@ export interface operations {
             };
         };
     };
+    v1_orders_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CancelRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CancelRequest"];
+                "multipart/form-data": components["schemas"]["CancelRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
     v1_product_images_list: {
         parameters: {
             query?: {
@@ -1766,6 +1934,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicShop"];
+                };
+            };
+        };
+    };
+    v1_staff_orders_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /**
+                 * @description * `cod` - Cash on delivery
+                 *     * `upi` - UPI
+                 */
+                payment_method?: "cod" | "upi";
+                placed_from?: string;
+                placed_to?: string;
+                /** @description A search term. */
+                search?: string;
+                /**
+                 * @description * `payment_pending` - Waiting for UPI payment
+                 *     * `confirmed` - Confirmed
+                 *     * `packed` - Packed
+                 *     * `shipped` - Shipped
+                 *     * `delivered` - Delivered
+                 *     * `cancelled` - Cancelled
+                 *     * `returned` - Returned
+                 */
+                status?: "cancelled" | "confirmed" | "delivered" | "packed" | "payment_pending" | "returned" | "shipped";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedStaffOrderList"];
+                };
+            };
+        };
+    };
+    v1_staff_orders_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffOrder"];
+                };
+            };
+        };
+    };
+    v1_staff_orders_status_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusChangeRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["StatusChangeRequest"];
+                "multipart/form-data": components["schemas"]["StatusChangeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffOrder"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
                 };
             };
         };

@@ -10,6 +10,7 @@ export type Category = components["schemas"]["Category"];
 export type Cart = components["schemas"]["Cart"];
 export type CartItem = components["schemas"]["CartItem"];
 export type Order = components["schemas"]["Order"];
+export type StaffOrder = components["schemas"]["StaffOrder"];
 export type Quote = components["schemas"]["Quote"];
 export type User = components["schemas"]["User"];
 export type Address = components["schemas"]["Address"];

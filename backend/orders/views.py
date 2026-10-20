@@ -8,10 +8,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from accounts.views import DetailSerializer
 from catalog.models import Variant
 
-from .models import Cart, CartItem, Order, OrderItem
+from .models import Cart, CartItem, Order, OrderEvent, OrderItem
 from .pricing import quote
+from .status import CUSTOMER_CANCELLABLE, StatusError, change_status
 
 
 def stock_error(variant, quantity):
@@ -194,15 +196,28 @@ class OrderItemSerializer(serializers.ModelSerializer):
         fields = ["id", "variant", "product_name", "label", "sku", "price", "mrp", "quantity", "line_total"]
 
 
-class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True, read_only=True)
+class OrderEventSerializer(serializers.ModelSerializer):
     status_label = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
+        model = OrderEvent
+        fields = ["status", "status_label", "note", "at"]
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+    events = OrderEventSerializer(many=True, read_only=True)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+    can_cancel = serializers.SerializerMethodField()
+
+    class Meta:
         model = Order
-        fields = ["number", "status", "status_label", "payment_method", "items",
+        fields = ["number", "status", "status_label", "can_cancel", "payment_method", "items", "events",
                   "ship_name", "ship_phone", "ship_line1", "ship_line2", "ship_landmark", "ship_city",
                   "ship_state", "ship_pincode", "subtotal", "shipping_fee", "cod_fee", "total", "created_at"]
+
+    def get_can_cancel(self, order) -> bool:
+        return order.status in CUSTOMER_CANCELLABLE
 
 
 def checkout_input(request):
@@ -234,7 +249,7 @@ class OrderRefusedSerializer(serializers.Serializer):
 @permission_classes([IsAuthenticated])
 def orders(request):
     if request.method == "GET":
-        return Response(OrderSerializer(request.user.orders.prefetch_related("items"), many=True).data)
+        return Response(OrderSerializer(my_orders(request), many=True).data)
 
     address, payment_method = checkout_input(request)
     with transaction.atomic():
@@ -263,6 +278,7 @@ def orders(request):
         ) for i in q["items"])
         for i in q["items"]:
             Variant.objects.filter(pk=i.variant_id).update(stock=F("stock") - i.quantity)
+        order.events.create(status=order.status, by=request.user)
         cart.items.all().delete()
     return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
@@ -271,4 +287,30 @@ def orders(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def order_detail(request, number):
-    return Response(OrderSerializer(get_object_or_404(request.user.orders, number=number)).data)
+    return Response(OrderSerializer(get_object_or_404(my_orders(request), number=number)).data)
+
+
+class CancelSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
+
+
+@extend_schema(request=CancelSerializer, responses={200: OrderSerializer, 400: DetailSerializer},
+               description="Customers can cancel until the shop starts packing; the stock goes back.")
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def cancel_order(request, number):
+    order = get_object_or_404(request.user.orders, number=number)
+    s = CancelSerializer(data=request.data)
+    s.is_valid(raise_exception=True)
+    if order.status not in CUSTOMER_CANCELLABLE:
+        return Response({"detail": "This order is already being packed. Please contact the shop."},
+                        status=status.HTTP_400_BAD_REQUEST)
+    try:
+        change_status(order, Order.Status.CANCELLED, request.user, s.validated_data["reason"])
+    except StatusError as e:
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(OrderSerializer(my_orders(request).get(pk=order.pk)).data)
+
+
+def my_orders(request):
+    return request.user.orders.prefetch_related("items", "events")

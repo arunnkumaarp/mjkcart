@@ -1,6 +1,7 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 
-from .models import Cart, CartItem, Order, OrderItem
+from .models import Cart, CartItem, Order, OrderEvent, OrderItem
+from .status import StatusError, change_status
 
 
 class CartItemInline(admin.TabularInline):
@@ -22,10 +23,29 @@ class OrderItemInline(admin.TabularInline):
     raw_id_fields = ["variant"]
 
 
+class OrderEventInline(admin.TabularInline):
+    model = OrderEvent
+    extra = 0
+    readonly_fields = ["status", "note", "by", "at"]
+    can_delete = False
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ["number", "user", "status", "payment_method", "total", "ship_city", "created_at"]
     list_filter = ["status", "payment_method"]
     search_fields = ["number", "user__email", "ship_name", "ship_phone", "ship_pincode"]
     raw_id_fields = ["user"]
-    inlines = [OrderItemInline]
+    inlines = [OrderItemInline, OrderEventInline]
+
+    def save_model(self, request, obj, form, change):
+        # Status changes go through the same rules as the app: history, allowed steps, restocking.
+        if change and "status" in form.changed_data:
+            new_status, obj.status = obj.status, form.initial["status"]
+            super().save_model(request, obj, form, change)
+            try:
+                change_status(obj, new_status, request.user, "Changed in Django admin")
+            except StatusError as e:
+                messages.error(request, str(e))
+        else:
+            super().save_model(request, obj, form, change)

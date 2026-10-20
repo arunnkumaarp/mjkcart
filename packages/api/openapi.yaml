@@ -664,6 +664,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/Order'
           description: ''
+  /api/v1/orders/{number}/cancel/:
+    post:
+      operationId: v1_orders_cancel_create
+      description: Customers can cancel until the shop starts packing; the stock goes
+        back.
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancelRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
   /api/v1/product-images/:
     get:
       operationId: v1_product_images_list
@@ -1046,6 +1085,143 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicShop'
           description: ''
+  /api/v1/staff/orders/:
+    get:
+      operationId: v1_staff_orders_list
+      description: All orders for the shop team, newest first, with search by number,
+        customer, phone or pincode.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: payment_method
+        schema:
+          type: string
+          enum:
+          - cod
+          - upi
+        description: |-
+          * `cod` - Cash on delivery
+          * `upi` - UPI
+      - in: query
+        name: placed_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: placed_to
+        schema:
+          type: string
+          format: date
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - confirmed
+          - delivered
+          - packed
+          - payment_pending
+          - returned
+          - shipped
+        description: |-
+          * `payment_pending` - Waiting for UPI payment
+          * `confirmed` - Confirmed
+          * `packed` - Packed
+          * `shipped` - Shipped
+          * `delivered` - Delivered
+          * `cancelled` - Cancelled
+          * `returned` - Returned
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStaffOrderList'
+          description: ''
+  /api/v1/staff/orders/{number}/:
+    get:
+      operationId: v1_staff_orders_retrieve
+      description: All orders for the shop team, newest first, with search by number,
+        customer, phone or pincode.
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffOrder'
+          description: ''
+  /api/v1/staff/orders/{number}/status/:
+    post:
+      operationId: v1_staff_orders_status_create
+      description: All orders for the shop team, newest first, with search by number,
+        customer, phone or pincode.
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusChangeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StatusChangeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StatusChangeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffOrder'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
   /api/v1/variants/:
     get:
       operationId: v1_variants_list
@@ -1313,6 +1489,13 @@ components:
       - phone
       - pincode
       - state
+    CancelRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          default: ''
+          maxLength: 200
     Cart:
       type: object
       properties:
@@ -1499,12 +1682,20 @@ components:
         status_label:
           type: string
           readOnly: true
+        can_cancel:
+          type: boolean
+          readOnly: true
         payment_method:
           $ref: '#/components/schemas/PaymentMethodEnum'
         items:
           type: array
           items:
             $ref: '#/components/schemas/OrderItem'
+          readOnly: true
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderEvent'
           readOnly: true
         ship_name:
           type: string
@@ -1551,8 +1742,10 @@ components:
           format: date-time
           readOnly: true
       required:
+      - can_cancel
       - cod_fee
       - created_at
+      - events
       - items
       - payment_method
       - ship_city
@@ -1566,6 +1759,25 @@ components:
       - status_label
       - subtotal
       - total
+    OrderEvent:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        status_label:
+          type: string
+          readOnly: true
+        note:
+          type: string
+          maxLength: 200
+        at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - at
+      - status
+      - status_label
     OrderItem:
       type: object
       properties:
@@ -1666,6 +1878,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Product'
+    PaginatedStaffOrderList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffOrder'
     PaginatedVariantList:
       type: object
       required:
@@ -2020,6 +2255,121 @@ components:
         * `customer` - Customer
         * `staff` - Staff
         * `admin` - Admin
+    StaffOrder:
+      type: object
+      properties:
+        number:
+          type: string
+          maxLength: 12
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        status_label:
+          type: string
+          readOnly: true
+        can_cancel:
+          type: boolean
+          readOnly: true
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          readOnly: true
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderEvent'
+          readOnly: true
+        ship_name:
+          type: string
+          maxLength: 80
+        ship_phone:
+          type: string
+          maxLength: 15
+        ship_line1:
+          type: string
+          maxLength: 200
+        ship_line2:
+          type: string
+          maxLength: 200
+        ship_landmark:
+          type: string
+          maxLength: 120
+        ship_city:
+          type: string
+          maxLength: 80
+        ship_state:
+          type: string
+          maxLength: 80
+        ship_pincode:
+          type: string
+          maxLength: 6
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        shipping_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        cod_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        customer_email:
+          type: string
+          format: email
+          readOnly: true
+        next_statuses:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - can_cancel
+      - cod_fee
+      - created_at
+      - customer_email
+      - events
+      - items
+      - next_statuses
+      - payment_method
+      - ship_city
+      - ship_line1
+      - ship_name
+      - ship_phone
+      - ship_pincode
+      - ship_state
+      - shipping_fee
+      - status
+      - status_label
+      - subtotal
+      - total
+      - updated_at
+    StatusChangeRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        note:
+          type: string
+          default: ''
+          maxLength: 200
+      required:
+      - status
     StatusEnum:
       enum:
       - payment_pending

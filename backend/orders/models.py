@@ -103,3 +103,19 @@ class OrderItem(models.Model):
     @property
     def line_total(self):
         return self.price * self.quantity
+
+
+class OrderEvent(models.Model):
+    """One step in an order's history; the customer sees these as the tracking timeline."""
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="events")
+    status = models.CharField(max_length=20, choices=Order.Status.choices)
+    note = models.CharField(max_length=200, blank=True, default="")
+    by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["at", "id"]
+
+    def __str__(self):
+        return f"{self.order} → {self.status}"
