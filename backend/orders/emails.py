@@ -74,7 +74,9 @@ def _summary(order):
     lines = [f"Order {order.number}"]
     lines += [f"  {i.quantity} × {i.product_name}{f' ({i.label})' if i.label else ''}  ₹{i.line_total}"
               for i in order.items.all()]
-    lines.append(f"Items ₹{order.subtotal} · Delivery ₹{order.shipping_fee}" +
+    lines.append(f"Items ₹{order.subtotal}" +
+                 (f" · Coupon {order.coupon_code} −₹{order.discount}" if order.discount else "") +
+                 f" · Delivery ₹{order.shipping_fee}" +
                  (f" · COD fee ₹{order.cod_fee}" if order.cod_fee else "") + f" · Total ₹{order.total}")
     lines.append(f"Deliver to: {order.ship_name}, {order.ship_line1}, {order.ship_city} {order.ship_pincode}")
     return "\n".join(lines)

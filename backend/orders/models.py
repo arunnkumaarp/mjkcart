@@ -90,6 +90,9 @@ class Order(models.Model):
     ship_pincode = models.CharField(max_length=6)
 
     subtotal = models.DecimalField(max_digits=12, decimal_places=2)
+    coupon = models.ForeignKey("offers.Coupon", null=True, blank=True, on_delete=models.SET_NULL, related_name="orders")
+    coupon_code = models.CharField(max_length=30, blank=True, default="")
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     shipping_fee = models.DecimalField(max_digits=8, decimal_places=2)
     cod_fee = models.DecimalField(max_digits=8, decimal_places=2)
     total = models.DecimalField(max_digits=12, decimal_places=2)

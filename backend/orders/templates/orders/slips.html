@@ -61,7 +61,7 @@
     {% endfor %}
   </table>
   <div class="totals">
-    Items ₹{{ o.subtotal }} · Delivery ₹{{ o.shipping_fee }}{% if o.cod_fee %} · COD fee ₹{{ o.cod_fee }}{% endif %}
+    Items ₹{{ o.subtotal }}{% if o.discount %} · Coupon {{ o.coupon_code }} −₹{{ o.discount }}{% endif %} · Delivery ₹{{ o.shipping_fee }}{% if o.cod_fee %} · COD fee ₹{{ o.cod_fee }}{% endif %}
     · <strong>Total ₹{{ o.total }}</strong>
   </div>
 </section>

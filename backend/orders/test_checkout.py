@@ -55,7 +55,8 @@ def checkout(client, address, method, url="/api/v1/orders/"):
 def test_quote_adds_shipping_and_cod_fee(shop, shopper, address, tea):
     fill_cart(shopper, tea, 2)
     q = checkout(shopper, address, "cod", "/api/v1/checkout/quote/").json()
-    assert q == {"subtotal": "360.00", "shipping_fee": "99.00", "cod_fee": "30.00", "total": "489.00", "problems": []}
+    assert q == {"subtotal": "360.00", "coupon_code": "", "discount": "0.00", "shipping_fee": "99.00",
+                 "cod_fee": "30.00", "total": "489.00", "problems": []}
     q = checkout(shopper, address, "upi", "/api/v1/checkout/quote/").json()
     assert q["cod_fee"] == "0.00" and q["total"] == "459.00"
 

@@ -10,6 +10,7 @@ from rest_framework.response import Response
 
 from accounts.views import DetailSerializer
 from catalog.models import Variant
+from offers.models import Coupon
 
 from .emails import notify
 from .models import Cart, CartItem, Order, OrderEvent, OrderItem
@@ -179,10 +180,13 @@ class OwnAddressField(serializers.PrimaryKeyRelatedField):
 class CheckoutSerializer(serializers.Serializer):
     address = OwnAddressField()
     payment_method = serializers.ChoiceField(choices=Order.Payment.choices)
+    coupon = serializers.CharField(max_length=30, required=False, allow_blank=True, default="")
 
 
 class QuoteSerializer(serializers.Serializer):
     subtotal = serializers.DecimalField(max_digits=12, decimal_places=2)
+    coupon_code = serializers.CharField(source="coupon.code", default="")
+    discount = serializers.DecimalField(max_digits=10, decimal_places=2)
     shipping_fee = serializers.DecimalField(max_digits=8, decimal_places=2)
     cod_fee = serializers.DecimalField(max_digits=8, decimal_places=2)
     total = serializers.DecimalField(max_digits=12, decimal_places=2)
@@ -227,7 +231,7 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ["number", "status", "status_label", "can_cancel", "payment_method", "payment", "items", "events",
                   "ship_name", "ship_phone", "ship_line1", "ship_line2", "ship_landmark", "ship_city",
-                  "ship_state", "ship_pincode", "courier_name", "tracking_number", "tracking_url", "subtotal", "shipping_fee", "cod_fee", "total", "created_at"]
+                  "ship_state", "ship_pincode", "courier_name", "tracking_number", "tracking_url", "subtotal", "coupon_code", "discount", "shipping_fee", "cod_fee", "total", "created_at"]
 
     @extend_schema_field(LatestPaymentSerializer(allow_null=True))
     def get_payment(self, order):
@@ -241,7 +245,7 @@ class OrderSerializer(serializers.ModelSerializer):
 def checkout_input(request):
     s = CheckoutSerializer(data=request.data, context={"request": request})
     s.is_valid(raise_exception=True)
-    return s.validated_data["address"], s.validated_data["payment_method"]
+    return s.validated_data["address"], s.validated_data["payment_method"], s.validated_data["coupon"]
 
 
 @extend_schema(request=CheckoutSerializer, responses=QuoteSerializer,
@@ -249,8 +253,8 @@ def checkout_input(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def checkout_quote(request):
-    _, payment_method = checkout_input(request)
-    q = quote(cart_for(request.user), payment_method)
+    _, payment_method, coupon = checkout_input(request)
+    q = quote(cart_for(request.user), payment_method, coupon)
     return Response(QuoteSerializer(q).data)
 
 
@@ -269,12 +273,14 @@ def orders(request):
     if request.method == "GET":
         return Response(OrderSerializer(my_orders(request), many=True).data)
 
-    address, payment_method = checkout_input(request)
+    address, payment_method, coupon = checkout_input(request)
     with transaction.atomic():
         cart = cart_for(request.user)
         # Lock the variants so two customers can't buy the last one together.
         list(Variant.objects.select_for_update().filter(pk__in=cart.items.values("variant")))
-        q = quote(cart, payment_method)
+        # And the coupon, so its usage limit can't be passed by orders placed at the same moment.
+        list(Coupon.objects.select_for_update().filter(code=coupon.strip().upper()))
+        q = quote(cart, payment_method, coupon)
         if q["problems"]:
             return Response({"detail": "The order can't be placed yet.", "problems": q["problems"]},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -285,7 +291,8 @@ def orders(request):
             ship_name=address.name, ship_phone=address.phone, ship_line1=address.line1, ship_line2=address.line2,
             ship_landmark=address.landmark, ship_city=address.city, ship_state=address.state,
             ship_pincode=address.pincode,
-            subtotal=q["subtotal"], shipping_fee=q["shipping_fee"], cod_fee=q["cod_fee"], total=q["total"],
+            subtotal=q["subtotal"], coupon=q["coupon"], coupon_code=q["coupon"].code if q["coupon"] else "",
+            discount=q["discount"], shipping_fee=q["shipping_fee"], cod_fee=q["cod_fee"], total=q["total"],
         )
         order.number = f"MJK{order.pk:06d}"
         order.save(update_fields=["number"])

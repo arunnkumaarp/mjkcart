@@ -14,6 +14,7 @@ export type StaffOrder = components["schemas"]["StaffOrder"];
 export type LatestPayment = components["schemas"]["LatestPayment"];
 export type StaffPayment = components["schemas"]["StaffPayment"];
 export type Courier = components["schemas"]["Courier"];
+export type Coupon = components["schemas"]["Coupon"];
 export type Quote = components["schemas"]["Quote"];
 export type User = components["schemas"]["User"];
 export type Address = components["schemas"]["Address"];

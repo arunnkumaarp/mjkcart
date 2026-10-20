@@ -401,6 +401,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/coupons/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Admins only. Removing a coupon switches it off; orders that used it keep the code. */
+        get: operations["v1_staff_coupons_list"];
+        put?: never;
+        /** @description Admins only. Removing a coupon switches it off; orders that used it keep the code. */
+        post: operations["v1_staff_coupons_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/coupons/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Admins only. Removing a coupon switches it off; orders that used it keep the code. */
+        get: operations["v1_staff_coupons_retrieve"];
+        /** @description Admins only. Removing a coupon switches it off; orders that used it keep the code. */
+        put: operations["v1_staff_coupons_update"];
+        post?: never;
+        /** @description Admins only. Removing a coupon switches it off; orders that used it keep the code. */
+        delete: operations["v1_staff_coupons_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Admins only. Removing a coupon switches it off; orders that used it keep the code. */
+        patch: operations["v1_staff_coupons_partial_update"];
+        trace?: never;
+    };
     "/api/v1/staff/couriers/": {
         parameters: {
             query?: never;
@@ -686,6 +724,48 @@ export interface components {
         CheckoutRequest: {
             address: number;
             payment_method: components["schemas"]["PaymentMethodEnum"];
+            /** @default  */
+            coupon: string;
+        };
+        Coupon: {
+            readonly id: number;
+            code: string;
+            description?: string;
+            kind: components["schemas"]["KindEnum"];
+            /** Format: decimal */
+            value: string;
+            /** Format: decimal */
+            max_discount?: string | null;
+            /** Format: decimal */
+            min_order?: string;
+            /** Format: date-time */
+            starts_at?: string | null;
+            /** Format: date-time */
+            ends_at?: string | null;
+            usage_limit?: number | null;
+            per_customer_limit?: number | null;
+            is_active?: boolean;
+            readonly times_used: number;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        CouponRequest: {
+            code: string;
+            description?: string;
+            kind: components["schemas"]["KindEnum"];
+            /** Format: decimal */
+            value: string;
+            /** Format: decimal */
+            max_discount?: string | null;
+            /** Format: decimal */
+            min_order?: string;
+            /** Format: date-time */
+            starts_at?: string | null;
+            /** Format: date-time */
+            ends_at?: string | null;
+            usage_limit?: number | null;
+            per_customer_limit?: number | null;
+            is_active?: boolean;
         };
         Courier: {
             readonly id: number;
@@ -701,6 +781,12 @@ export interface components {
             /** Format: email */
             email: string;
         };
+        /**
+         * @description * `percent` - Percent off
+         *     * `flat` - Rupees off
+         * @enum {string}
+         */
+        KindEnum: "percent" | "flat";
         LatestPayment: {
             status: string;
             status_label: string;
@@ -739,6 +825,9 @@ export interface components {
             readonly tracking_url: string;
             /** Format: decimal */
             subtotal: string;
+            coupon_code?: string;
+            /** Format: decimal */
+            discount?: string;
             /** Format: decimal */
             shipping_fee: string;
             /** Format: decimal */
@@ -784,6 +873,21 @@ export interface components {
          * @enum {string}
          */
         OrderStatusEnum: "payment_pending" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled" | "returned";
+        PaginatedCouponList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Coupon"][];
+        };
         PaginatedProductImageList: {
             /** @example 123 */
             count: number;
@@ -874,6 +978,24 @@ export interface components {
             name?: string;
             parent?: number | null;
             sort_order?: number;
+            is_active?: boolean;
+        };
+        PatchedCouponRequest: {
+            code?: string;
+            description?: string;
+            kind?: components["schemas"]["KindEnum"];
+            /** Format: decimal */
+            value?: string;
+            /** Format: decimal */
+            max_discount?: string | null;
+            /** Format: decimal */
+            min_order?: string;
+            /** Format: date-time */
+            starts_at?: string | null;
+            /** Format: date-time */
+            ends_at?: string | null;
+            usage_limit?: number | null;
+            per_customer_limit?: number | null;
             is_active?: boolean;
         };
         PatchedProductImageRequest: {
@@ -988,6 +1110,10 @@ export interface components {
         Quote: {
             /** Format: decimal */
             subtotal: string;
+            /** @default  */
+            coupon_code: string;
+            /** Format: decimal */
+            discount: string;
             /** Format: decimal */
             shipping_fee: string;
             /** Format: decimal */
@@ -1028,6 +1154,9 @@ export interface components {
             readonly tracking_url: string;
             /** Format: decimal */
             subtotal: string;
+            coupon_code?: string;
+            /** Format: decimal */
+            discount?: string;
             /** Format: decimal */
             shipping_fee: string;
             /** Format: decimal */
@@ -2177,6 +2306,162 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicShop"];
+                };
+            };
+        };
+    };
+    v1_staff_coupons_list: {
+        parameters: {
+            query?: {
+                is_active?: boolean;
+                /**
+                 * @description * `percent` - Percent off
+                 *     * `flat` - Rupees off
+                 */
+                kind?: "flat" | "percent";
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCouponList"];
+                };
+            };
+        };
+    };
+    v1_staff_coupons_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CouponRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CouponRequest"];
+                "multipart/form-data": components["schemas"]["CouponRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Coupon"];
+                };
+            };
+        };
+    };
+    v1_staff_coupons_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this coupon. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Coupon"];
+                };
+            };
+        };
+    };
+    v1_staff_coupons_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this coupon. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CouponRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CouponRequest"];
+                "multipart/form-data": components["schemas"]["CouponRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Coupon"];
+                };
+            };
+        };
+    };
+    v1_staff_coupons_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this coupon. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_staff_coupons_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this coupon. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCouponRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCouponRequest"];
+                "multipart/form-data": components["schemas"]["PatchedCouponRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Coupon"];
                 };
             };
         };
