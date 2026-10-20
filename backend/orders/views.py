@@ -1,6 +1,8 @@
 from django.db import transaction
+from django.db.models import F
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, extend_schema_field
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -8,7 +10,8 @@ from rest_framework.response import Response
 
 from catalog.models import Variant
 
-from .models import Cart, CartItem
+from .models import Cart, CartItem, Order, OrderItem
+from .pricing import quote
 
 
 def stock_error(variant, quantity):
@@ -160,3 +163,112 @@ def merge(request):
         item.save(update_fields=["quantity"])
     cart.save(update_fields=["updated_at"])
     return cart_response(request, cart)
+
+
+@extend_schema_field(OpenApiTypes.INT)
+class OwnAddressField(serializers.PrimaryKeyRelatedField):
+    """Only the customer's own addresses can be chosen."""
+
+    def get_queryset(self):
+        return self.context["request"].user.addresses.all()
+
+
+class CheckoutSerializer(serializers.Serializer):
+    address = OwnAddressField()
+    payment_method = serializers.ChoiceField(choices=Order.Payment.choices)
+
+
+class QuoteSerializer(serializers.Serializer):
+    subtotal = serializers.DecimalField(max_digits=12, decimal_places=2)
+    shipping_fee = serializers.DecimalField(max_digits=8, decimal_places=2)
+    cod_fee = serializers.DecimalField(max_digits=8, decimal_places=2)
+    total = serializers.DecimalField(max_digits=12, decimal_places=2)
+    problems = serializers.ListField(child=serializers.CharField())
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    line_total = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = OrderItem
+        fields = ["id", "variant", "product_name", "label", "sku", "price", "mrp", "quantity", "line_total"]
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ["number", "status", "status_label", "payment_method", "items",
+                  "ship_name", "ship_phone", "ship_line1", "ship_line2", "ship_landmark", "ship_city",
+                  "ship_state", "ship_pincode", "subtotal", "shipping_fee", "cod_fee", "total", "created_at"]
+
+
+def checkout_input(request):
+    s = CheckoutSerializer(data=request.data, context={"request": request})
+    s.is_valid(raise_exception=True)
+    return s.validated_data["address"], s.validated_data["payment_method"]
+
+
+@extend_schema(request=CheckoutSerializer, responses=QuoteSerializer,
+               description="Totals for the checkout screen. Problems lists anything that stops the order.")
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def checkout_quote(request):
+    _, payment_method = checkout_input(request)
+    q = quote(cart_for(request.user), payment_method)
+    return Response(QuoteSerializer(q).data)
+
+
+class OrderRefusedSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+    problems = serializers.ListField(child=serializers.CharField())
+
+
+@extend_schema(methods=["GET"], responses=OrderSerializer(many=True))
+@extend_schema(methods=["POST"], request=CheckoutSerializer, responses={201: OrderSerializer, 400: OrderRefusedSerializer},
+               description="Place the cart as an order: stock is taken and the cart emptied. "
+                           "COD orders are confirmed at once; UPI orders wait for the payment check.")
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def orders(request):
+    if request.method == "GET":
+        return Response(OrderSerializer(request.user.orders.prefetch_related("items"), many=True).data)
+
+    address, payment_method = checkout_input(request)
+    with transaction.atomic():
+        cart = cart_for(request.user)
+        # Lock the variants so two customers can't buy the last one together.
+        list(Variant.objects.select_for_update().filter(pk__in=cart.items.values("variant")))
+        q = quote(cart, payment_method)
+        if q["problems"]:
+            return Response({"detail": "The order can't be placed yet.", "problems": q["problems"]},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        order = Order.objects.create(
+            user=request.user, payment_method=payment_method,
+            status=Order.Status.CONFIRMED if payment_method == Order.Payment.COD else Order.Status.PAYMENT_PENDING,
+            ship_name=address.name, ship_phone=address.phone, ship_line1=address.line1, ship_line2=address.line2,
+            ship_landmark=address.landmark, ship_city=address.city, ship_state=address.state,
+            ship_pincode=address.pincode,
+            subtotal=q["subtotal"], shipping_fee=q["shipping_fee"], cod_fee=q["cod_fee"], total=q["total"],
+        )
+        order.number = f"MJK{order.pk:06d}"
+        order.save(update_fields=["number"])
+        OrderItem.objects.bulk_create(OrderItem(
+            order=order, variant=i.variant, product_name=i.variant.product.name, label=i.variant.label,
+            sku=i.variant.sku or "", price=i.variant.price, mrp=i.variant.mrp, quantity=i.quantity,
+            weight_grams=i.variant.weight_grams,
+        ) for i in q["items"])
+        for i in q["items"]:
+            Variant.objects.filter(pk=i.variant_id).update(stock=F("stock") - i.quantity)
+        cart.items.all().delete()
+    return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(responses=OrderSerializer)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def order_detail(request, number):
+    return Response(OrderSerializer(get_object_or_404(request.user.orders, number=number)).data)

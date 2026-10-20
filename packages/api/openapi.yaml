@@ -365,6 +365,34 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/checkout/quote/:
+    post:
+      operationId: v1_checkout_quote_create
+      description: Totals for the checkout screen. Problems lists anything that stops
+        the order.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+          description: ''
   /api/v1/health/:
     get:
       operationId: v1_health_retrieve
@@ -567,6 +595,75 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/orders/:
+    get:
+      operationId: v1_orders_list
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+          description: ''
+    post:
+      operationId: v1_orders_create
+      description: 'Place the cart as an order: stock is taken and the cart emptied.
+        COD orders are confirmed at once; UPI orders wait for the payment check.'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderRefused'
+          description: ''
+  /api/v1/orders/{number}/:
+    get:
+      operationId: v1_orders_retrieve
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
   /api/v1/product-images/:
     get:
       operationId: v1_product_images_list
@@ -1343,6 +1440,16 @@ components:
           type: boolean
       required:
       - name
+    CheckoutRequest:
+      type: object
+      properties:
+        address:
+          type: integer
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+      required:
+      - address
+      - payment_method
     Detail:
       type: object
       properties:
@@ -1381,6 +1488,138 @@ components:
             $ref: '#/components/schemas/AddItemRequest'
       required:
       - items
+    Order:
+      type: object
+      properties:
+        number:
+          type: string
+          maxLength: 12
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        status_label:
+          type: string
+          readOnly: true
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          readOnly: true
+        ship_name:
+          type: string
+          maxLength: 80
+        ship_phone:
+          type: string
+          maxLength: 15
+        ship_line1:
+          type: string
+          maxLength: 200
+        ship_line2:
+          type: string
+          maxLength: 200
+        ship_landmark:
+          type: string
+          maxLength: 120
+        ship_city:
+          type: string
+          maxLength: 80
+        ship_state:
+          type: string
+          maxLength: 80
+        ship_pincode:
+          type: string
+          maxLength: 6
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        shipping_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        cod_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - cod_fee
+      - created_at
+      - items
+      - payment_method
+      - ship_city
+      - ship_line1
+      - ship_name
+      - ship_phone
+      - ship_pincode
+      - ship_state
+      - shipping_fee
+      - status
+      - status_label
+      - subtotal
+      - total
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        variant:
+          type: integer
+          nullable: true
+        product_name:
+          type: string
+          maxLength: 120
+        label:
+          type: string
+          maxLength: 90
+        sku:
+          type: string
+          maxLength: 40
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        mrp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        line_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - id
+      - line_total
+      - price
+      - product_name
+      - quantity
+    OrderRefused:
+      type: object
+      properties:
+        detail:
+          type: string
+        problems:
+          type: array
+          items:
+            type: string
+      required:
+      - detail
+      - problems
     PaginatedProductImageList:
       type: object
       required:
@@ -1583,6 +1822,14 @@ components:
           minimum: 0
         is_active:
           type: boolean
+    PaymentMethodEnum:
+      enum:
+      - cod
+      - upi
+      type: string
+      description: |-
+        * `cod` - Cash on delivery
+        * `upi` - UPI
     Product:
       type: object
       properties:
@@ -1734,6 +1981,35 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+    Quote:
+      type: object
+      properties:
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        shipping_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        cod_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        problems:
+          type: array
+          items:
+            type: string
+      required:
+      - cod_fee
+      - problems
+      - shipping_fee
+      - subtotal
+      - total
     RoleEnum:
       enum:
       - customer
@@ -1744,6 +2020,24 @@ components:
         * `customer` - Customer
         * `staff` - Staff
         * `admin` - Admin
+    StatusEnum:
+      enum:
+      - payment_pending
+      - confirmed
+      - packed
+      - shipped
+      - delivered
+      - cancelled
+      - returned
+      type: string
+      description: |-
+        * `payment_pending` - Waiting for UPI payment
+        * `confirmed` - Confirmed
+        * `packed` - Packed
+        * `shipped` - Shipped
+        * `delivered` - Delivered
+        * `cancelled` - Cancelled
+        * `returned` - Returned
     TokenRefresh:
       type: object
       properties:
