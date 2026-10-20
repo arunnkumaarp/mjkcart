@@ -56,6 +56,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/categories/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Anyone can read; staff and admins write. Removing hides the row so past orders keep it. */
+        get: operations["v1_categories_list"];
+        put?: never;
+        /** @description Anyone can read; staff and admins write. Removing hides the row so past orders keep it. */
+        post: operations["v1_categories_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/categories/{slug}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Anyone can read; staff and admins write. Removing hides the row so past orders keep it. */
+        get: operations["v1_categories_retrieve"];
+        /** @description Anyone can read; staff and admins write. Removing hides the row so past orders keep it. */
+        put: operations["v1_categories_update"];
+        post?: never;
+        /** @description Anyone can read; staff and admins write. Removing hides the row so past orders keep it. */
+        delete: operations["v1_categories_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Anyone can read; staff and admins write. Removing hides the row so past orders keep it. */
+        patch: operations["v1_categories_partial_update"];
+        trace?: never;
+    };
     "/api/v1/health/": {
         parameters: {
             query?: never;
@@ -120,6 +158,44 @@ export interface paths {
         patch: operations["v1_me_addresses_partial_update"];
         trace?: never;
     };
+    "/api/v1/product-images/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Upload images as multipart form data. Deleting an image removes the file too. */
+        get: operations["v1_product_images_list"];
+        put?: never;
+        /** @description Upload images as multipart form data. Deleting an image removes the file too. */
+        post: operations["v1_product_images_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-images/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Upload images as multipart form data. Deleting an image removes the file too. */
+        get: operations["v1_product_images_retrieve"];
+        /** @description Upload images as multipart form data. Deleting an image removes the file too. */
+        put: operations["v1_product_images_update"];
+        post?: never;
+        /** @description Upload images as multipart form data. Deleting an image removes the file too. */
+        delete: operations["v1_product_images_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Upload images as multipart form data. Deleting an image removes the file too. */
+        patch: operations["v1_product_images_partial_update"];
+        trace?: never;
+    };
     "/api/v1/products/": {
         parameters: {
             query?: never;
@@ -127,10 +203,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Anyone can browse active products; staff and admins add, edit and remove them. */
+        /** @description Customers see active products that have something to buy; staff see everything. */
         get: operations["v1_products_list"];
         put?: never;
-        /** @description Anyone can browse active products; staff and admins add, edit and remove them. */
+        /** @description Customers see active products that have something to buy; staff see everything. */
         post: operations["v1_products_create"];
         delete?: never;
         options?: never;
@@ -145,16 +221,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Anyone can browse active products; staff and admins add, edit and remove them. */
+        /** @description Customers see active products that have something to buy; staff see everything. */
         get: operations["v1_products_retrieve"];
-        /** @description Anyone can browse active products; staff and admins add, edit and remove them. */
+        /** @description Customers see active products that have something to buy; staff see everything. */
         put: operations["v1_products_update"];
         post?: never;
-        /** @description Anyone can browse active products; staff and admins add, edit and remove them. */
+        /** @description Customers see active products that have something to buy; staff see everything. */
         delete: operations["v1_products_destroy"];
         options?: never;
         head?: never;
-        /** @description Anyone can browse active products; staff and admins add, edit and remove them. */
+        /** @description Customers see active products that have something to buy; staff see everything. */
         patch: operations["v1_products_partial_update"];
         trace?: never;
     };
@@ -172,6 +248,44 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/variants/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Staff manage variants here; customers get them inside the product. */
+        get: operations["v1_variants_list"];
+        put?: never;
+        /** @description Staff manage variants here; customers get them inside the product. */
+        post: operations["v1_variants_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/variants/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Staff manage variants here; customers get them inside the product. */
+        get: operations["v1_variants_retrieve"];
+        /** @description Staff manage variants here; customers get them inside the product. */
+        put: operations["v1_variants_update"];
+        post?: never;
+        /** @description Staff manage variants here; customers get them inside the product. */
+        delete: operations["v1_variants_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Staff manage variants here; customers get them inside the product. */
+        patch: operations["v1_variants_partial_update"];
         trace?: never;
     };
 }
@@ -201,6 +315,20 @@ export interface components {
             pincode: string;
             is_default?: boolean;
         };
+        Category: {
+            readonly id: number;
+            name: string;
+            readonly slug: string;
+            parent?: number | null;
+            sort_order?: number;
+            is_active?: boolean;
+        };
+        CategoryRequest: {
+            name: string;
+            parent?: number | null;
+            sort_order?: number;
+            is_active?: boolean;
+        };
         Detail: {
             detail: string;
         };
@@ -213,6 +341,51 @@ export interface components {
             refresh: string;
             user: components["schemas"]["User"];
         };
+        PaginatedProductImageList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["ProductImage"][];
+        };
+        PaginatedProductList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Product"][];
+        };
+        PaginatedVariantList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Variant"][];
+        };
         PatchedAddressRequest: {
             name?: string;
             phone?: string;
@@ -224,50 +397,80 @@ export interface components {
             pincode?: string;
             is_default?: boolean;
         };
+        PatchedCategoryRequest: {
+            name?: string;
+            parent?: number | null;
+            sort_order?: number;
+            is_active?: boolean;
+        };
+        PatchedProductImageRequest: {
+            product?: number;
+            /** Format: binary */
+            image?: string;
+            alt?: string;
+            sort_order?: number;
+        };
         PatchedProductRequest: {
             name?: string;
             description?: string;
-            /** Format: decimal */
-            price?: string;
-            /** Format: decimal */
-            mrp?: string | null;
-            stock?: number;
-            /** Format: binary */
-            image?: string;
+            category?: number | null;
             is_active?: boolean;
         };
         PatchedUserRequest: {
             first_name?: string;
             phone?: string;
         };
+        PatchedVariantRequest: {
+            product?: number;
+            size?: string;
+            colour?: string;
+            sku?: string | null;
+            /** Format: decimal */
+            price?: string;
+            /** Format: decimal */
+            mrp?: string | null;
+            stock?: number;
+            weight_grams?: number;
+            sort_order?: number;
+            is_active?: boolean;
+        };
         Product: {
             readonly id: number;
             name: string;
             readonly slug: string;
             description?: string;
-            /** Format: decimal */
-            price: string;
-            /** Format: decimal */
-            mrp?: string | null;
-            stock?: number;
-            /** Format: uri */
-            image?: string;
+            category?: number | null;
             is_active?: boolean;
+            /** Format: decimal */
+            readonly price_from: string | null;
+            /** @default false */
+            readonly in_stock: boolean;
+            readonly variants: components["schemas"]["Variant"][];
+            readonly images: components["schemas"]["ProductImage"][];
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
         };
+        ProductImage: {
+            readonly id: number;
+            product: number;
+            /** Format: uri */
+            image: string;
+            alt?: string;
+            sort_order?: number;
+        };
+        ProductImageRequest: {
+            product: number;
+            /** Format: binary */
+            image: string;
+            alt?: string;
+            sort_order?: number;
+        };
         ProductRequest: {
             name: string;
             description?: string;
-            /** Format: decimal */
-            price: string;
-            /** Format: decimal */
-            mrp?: string | null;
-            stock?: number;
-            /** Format: binary */
-            image?: string;
+            category?: number | null;
             is_active?: boolean;
         };
         PublicShop: {
@@ -311,6 +514,36 @@ export interface components {
             first_name?: string;
             phone?: string;
             readonly role: components["schemas"]["RoleEnum"];
+        };
+        Variant: {
+            readonly id: number;
+            product: number;
+            readonly label: string;
+            size?: string;
+            colour?: string;
+            sku?: string | null;
+            /** Format: decimal */
+            price: string;
+            /** Format: decimal */
+            mrp?: string | null;
+            stock?: number;
+            weight_grams?: number;
+            sort_order?: number;
+            is_active?: boolean;
+        };
+        VariantRequest: {
+            product: number;
+            size?: string;
+            colour?: string;
+            sku?: string | null;
+            /** Format: decimal */
+            price: string;
+            /** Format: decimal */
+            mrp?: string | null;
+            stock?: number;
+            weight_grams?: number;
+            sort_order?: number;
+            is_active?: boolean;
         };
         VerifyRequest: {
             /** Format: email */
@@ -397,6 +630,148 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TokenRefresh"];
+                };
+            };
+        };
+    };
+    v1_categories_list: {
+        parameters: {
+            query?: {
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"][];
+                };
+            };
+        };
+    };
+    v1_categories_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CategoryRequest"];
+                "multipart/form-data": components["schemas"]["CategoryRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+        };
+    };
+    v1_categories_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+        };
+    };
+    v1_categories_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CategoryRequest"];
+                "multipart/form-data": components["schemas"]["CategoryRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+        };
+    };
+    v1_categories_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_categories_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCategoryRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCategoryRequest"];
+                "multipart/form-data": components["schemas"]["PatchedCategoryRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
                 };
             };
         };
@@ -612,10 +987,14 @@ export interface operations {
             };
         };
     };
-    v1_products_list: {
+    v1_product_images_list: {
         parameters: {
             query?: {
-                is_active?: boolean;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                product?: number;
                 /** @description A search term. */
                 search?: string;
             };
@@ -630,7 +1009,165 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Product"][];
+                    "application/json": components["schemas"]["PaginatedProductImageList"];
+                };
+            };
+        };
+    };
+    v1_product_images_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ProductImageRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProductImageRequest"];
+                "application/json": components["schemas"]["ProductImageRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductImage"];
+                };
+            };
+        };
+    };
+    v1_product_images_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this product image. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductImage"];
+                };
+            };
+        };
+    };
+    v1_product_images_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this product image. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ProductImageRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProductImageRequest"];
+                "application/json": components["schemas"]["ProductImageRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductImage"];
+                };
+            };
+        };
+    };
+    v1_product_images_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this product image. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_product_images_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this product image. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["PatchedProductImageRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedProductImageRequest"];
+                "application/json": components["schemas"]["PatchedProductImageRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductImage"];
+                };
+            };
+        };
+    };
+    v1_products_list: {
+        parameters: {
+            query?: {
+                /** @description Category slug; includes sub-categories. */
+                category?: string;
+                in_stock?: boolean;
+                is_active?: boolean;
+                max_price?: number;
+                min_price?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedProductList"];
                 };
             };
         };
@@ -770,6 +1307,158 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicShop"];
+                };
+            };
+        };
+    };
+    v1_variants_list: {
+        parameters: {
+            query?: {
+                is_active?: boolean;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                product?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedVariantList"];
+                };
+            };
+        };
+    };
+    v1_variants_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VariantRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["VariantRequest"];
+                "multipart/form-data": components["schemas"]["VariantRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Variant"];
+                };
+            };
+        };
+    };
+    v1_variants_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this variant. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Variant"];
+                };
+            };
+        };
+    };
+    v1_variants_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this variant. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VariantRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["VariantRequest"];
+                "multipart/form-data": components["schemas"]["VariantRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Variant"];
+                };
+            };
+        };
+    };
+    v1_variants_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this variant. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_variants_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this variant. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedVariantRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedVariantRequest"];
+                "multipart/form-data": components["schemas"]["PatchedVariantRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Variant"];
                 };
             };
         };

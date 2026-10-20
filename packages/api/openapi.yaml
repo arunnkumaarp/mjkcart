@@ -84,6 +84,162 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenRefresh'
           description: ''
+  /api/v1/categories/:
+    get:
+      operationId: v1_categories_list
+      description: Anyone can read; staff and admins write. Removing hides the row
+        so past orders keep it.
+      parameters:
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: ''
+    post:
+      operationId: v1_categories_create
+      description: Anyone can read; staff and admins write. Removing hides the row
+        so past orders keep it.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/v1/categories/{slug}/:
+    get:
+      operationId: v1_categories_retrieve
+      description: Anyone can read; staff and admins write. Removing hides the row
+        so past orders keep it.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    put:
+      operationId: v1_categories_update
+      description: Anyone can read; staff and admins write. Removing hides the row
+        so past orders keep it.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: v1_categories_partial_update
+      description: Anyone can read; staff and admins write. Removing hides the row
+        so past orders keep it.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    delete:
+      operationId: v1_categories_destroy
+      description: Anyone can read; staff and admins write. Removing hides the row
+        so past orders keep it.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/health/:
     get:
       operationId: v1_health_retrieve
@@ -286,16 +442,28 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/v1/products/:
+  /api/v1/product-images/:
     get:
-      operationId: v1_products_list
-      description: Anyone can browse active products; staff and admins add, edit and
-        remove them.
+      operationId: v1_product_images_list
+      description: Upload images as multipart form data. Deleting an image removes
+        the file too.
       parameters:
-      - in: query
-        name: is_active
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
         schema:
-          type: boolean
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: integer
       - name: search
         required: false
         in: query
@@ -311,14 +479,209 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Product'
+                $ref: '#/components/schemas/PaginatedProductImageList'
+          description: ''
+    post:
+      operationId: v1_product_images_create
+      description: Upload images as multipart form data. Deleting an image removes
+        the file too.
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductImageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductImageRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductImageRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductImage'
+          description: ''
+  /api/v1/product-images/{id}/:
+    get:
+      operationId: v1_product_images_retrieve
+      description: Upload images as multipart form data. Deleting an image removes
+        the file too.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product image.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductImage'
+          description: ''
+    put:
+      operationId: v1_product_images_update
+      description: Upload images as multipart form data. Deleting an image removes
+        the file too.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product image.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductImageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductImageRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductImageRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductImage'
+          description: ''
+    patch:
+      operationId: v1_product_images_partial_update
+      description: Upload images as multipart form data. Deleting an image removes
+        the file too.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product image.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductImageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductImageRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductImageRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductImage'
+          description: ''
+    delete:
+      operationId: v1_product_images_destroy
+      description: Upload images as multipart form data. Deleting an image removes
+        the file too.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this product image.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/products/:
+    get:
+      operationId: v1_products_list
+      description: Customers see active products that have something to buy; staff
+        see everything.
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Category slug; includes sub-categories.
+      - in: query
+        name: in_stock
+        schema:
+          type: boolean
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: max_price
+        schema:
+          type: number
+      - in: query
+        name: min_price
+        schema:
+          type: number
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
           description: ''
     post:
       operationId: v1_products_create
-      description: Anyone can browse active products; staff and admins add, edit and
-        remove them.
+      description: Customers see active products that have something to buy; staff
+        see everything.
       tags:
       - v1
       requestBody:
@@ -345,8 +708,8 @@ paths:
   /api/v1/products/{slug}/:
     get:
       operationId: v1_products_retrieve
-      description: Anyone can browse active products; staff and admins add, edit and
-        remove them.
+      description: Customers see active products that have something to buy; staff
+        see everything.
       parameters:
       - in: path
         name: slug
@@ -366,8 +729,8 @@ paths:
           description: ''
     put:
       operationId: v1_products_update
-      description: Anyone can browse active products; staff and admins add, edit and
-        remove them.
+      description: Customers see active products that have something to buy; staff
+        see everything.
       parameters:
       - in: path
         name: slug
@@ -399,8 +762,8 @@ paths:
           description: ''
     patch:
       operationId: v1_products_partial_update
-      description: Anyone can browse active products; staff and admins add, edit and
-        remove them.
+      description: Customers see active products that have something to buy; staff
+        see everything.
       parameters:
       - in: path
         name: slug
@@ -431,8 +794,8 @@ paths:
           description: ''
     delete:
       operationId: v1_products_destroy
-      description: Anyone can browse active products; staff and admins add, edit and
-        remove them.
+      description: Customers see active products that have something to buy; staff
+        see everything.
       parameters:
       - in: path
         name: slug
@@ -461,6 +824,178 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicShop'
           description: ''
+  /api/v1/variants/:
+    get:
+      operationId: v1_variants_list
+      description: Staff manage variants here; customers get them inside the product.
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedVariantList'
+          description: ''
+    post:
+      operationId: v1_variants_create
+      description: Staff manage variants here; customers get them inside the product.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariantRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VariantRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VariantRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variant'
+          description: ''
+  /api/v1/variants/{id}/:
+    get:
+      operationId: v1_variants_retrieve
+      description: Staff manage variants here; customers get them inside the product.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this variant.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variant'
+          description: ''
+    put:
+      operationId: v1_variants_update
+      description: Staff manage variants here; customers get them inside the product.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this variant.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariantRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VariantRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VariantRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variant'
+          description: ''
+    patch:
+      operationId: v1_variants_partial_update
+      description: Staff manage variants here; customers get them inside the product.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this variant.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVariantRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVariantRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedVariantRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variant'
+          description: ''
+    delete:
+      operationId: v1_variants_destroy
+      description: Staff manage variants here; customers get them inside the product.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this variant.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
 components:
   schemas:
     Address:
@@ -545,6 +1080,50 @@ components:
       - phone
       - pincode
       - state
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 80
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        parent:
+          type: integer
+          nullable: true
+        sort_order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        is_active:
+          type: boolean
+      required:
+      - id
+      - name
+      - slug
+    CategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        parent:
+          type: integer
+          nullable: true
+        sort_order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        is_active:
+          type: boolean
+      required:
+      - name
     Detail:
       type: object
       properties:
@@ -574,6 +1153,75 @@ components:
       - access
       - refresh
       - user
+    PaginatedProductImageList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
+    PaginatedProductList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+    PaginatedVariantList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variant'
     PatchedAddressRequest:
       type: object
       properties:
@@ -609,6 +1257,37 @@ components:
           pattern: ^[1-9]\d{5}$
         is_default:
           type: boolean
+    PatchedCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        parent:
+          type: integer
+          nullable: true
+        sort_order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        is_active:
+          type: boolean
+    PatchedProductImageRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        image:
+          type: string
+          format: binary
+        alt:
+          type: string
+          maxLength: 120
+        sort_order:
+          type: integer
+          maximum: 32767
+          minimum: 0
     PatchedProductRequest:
       type: object
       properties:
@@ -618,6 +1297,35 @@ components:
           maxLength: 120
         description:
           type: string
+        category:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+    PatchedUserRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        phone:
+          type: string
+          maxLength: 15
+    PatchedVariantRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        size:
+          type: string
+          maxLength: 40
+        colour:
+          type: string
+          maxLength: 40
+        sku:
+          type: string
+          nullable: true
+          maxLength: 40
         price:
           type: string
           format: decimal
@@ -631,20 +1339,16 @@ components:
           type: integer
           maximum: 2147483647
           minimum: 0
-        image:
-          type: string
-          format: binary
+        weight_grams:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sort_order:
+          type: integer
+          maximum: 32767
+          minimum: 0
         is_active:
           type: boolean
-    PatchedUserRequest:
-      type: object
-      properties:
-        first_name:
-          type: string
-          maxLength: 150
-        phone:
-          type: string
-          maxLength: 15
     Product:
       type: object
       properties:
@@ -660,24 +1364,31 @@ components:
           pattern: ^[-a-zA-Z0-9_]+$
         description:
           type: string
-        price:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        mrp:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          nullable: true
-        stock:
+        category:
           type: integer
-          maximum: 2147483647
-          minimum: 0
-        image:
-          type: string
-          format: uri
+          nullable: true
         is_active:
           type: boolean
+        price_from:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        in_stock:
+          type: boolean
+          readOnly: true
+          default: false
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variant'
+          readOnly: true
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -689,10 +1400,53 @@ components:
       required:
       - created_at
       - id
+      - images
+      - in_stock
       - name
-      - price
+      - price_from
       - slug
       - updated_at
+      - variants
+    ProductImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: integer
+        image:
+          type: string
+          format: uri
+        alt:
+          type: string
+          maxLength: 120
+        sort_order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+      required:
+      - id
+      - image
+      - product
+    ProductImageRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        image:
+          type: string
+          format: binary
+        alt:
+          type: string
+          maxLength: 120
+        sort_order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+      required:
+      - image
+      - product
     ProductRequest:
       type: object
       properties:
@@ -702,27 +1456,13 @@ components:
           maxLength: 120
         description:
           type: string
-        price:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        mrp:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          nullable: true
-        stock:
+        category:
           type: integer
-          maximum: 2147483647
-          minimum: 0
-        image:
-          type: string
-          format: binary
+          nullable: true
         is_active:
           type: boolean
       required:
       - name
-      - price
     PublicShop:
       type: object
       properties:
@@ -812,6 +1552,96 @@ components:
       - email
       - id
       - role
+    Variant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: integer
+        label:
+          type: string
+          readOnly: true
+        size:
+          type: string
+          maxLength: 40
+        colour:
+          type: string
+          maxLength: 40
+        sku:
+          type: string
+          nullable: true
+          maxLength: 40
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        mrp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        stock:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        weight_grams:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sort_order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        is_active:
+          type: boolean
+      required:
+      - id
+      - label
+      - price
+      - product
+    VariantRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        size:
+          type: string
+          maxLength: 40
+        colour:
+          type: string
+          maxLength: 40
+        sku:
+          type: string
+          nullable: true
+          maxLength: 40
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        mrp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        stock:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        weight_grams:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sort_order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        is_active:
+          type: boolean
+      required:
+      - price
+      - product
     VerifyRequest:
       type: object
       properties:

@@ -4,6 +4,9 @@ import type { components, paths } from "./schema";
 
 export type { components, paths };
 export type Product = components["schemas"]["Product"];
+export type Variant = components["schemas"]["Variant"];
+export type ProductImage = components["schemas"]["ProductImage"];
+export type Category = components["schemas"]["Category"];
 export type User = components["schemas"]["User"];
 export type Address = components["schemas"]["Address"];
 export type Shop = components["schemas"]["PublicShop"];
