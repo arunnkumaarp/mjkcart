@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Packing slips · {{ shop.shop_name }}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: #111; margin: 0; padding: 16px; }
+  .order { max-width: 720px; margin: 0 auto 32px; page-break-after: always; }
+  .order:last-child { page-break-after: auto; }
+  .label { border: 2px solid #111; padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; }
+  .to { font-size: 16px; }
+  .to strong { font-size: 18px; }
+  .pin { font-size: 26px; font-weight: 700; letter-spacing: 2px; }
+  .side { text-align: right; }
+  .number { font-size: 18px; font-weight: 700; }
+  .cod { margin-top: 6px; font-size: 16px; font-weight: 700; border: 2px solid #111; padding: 4px 8px; display: inline-block; }
+  .from { grid-column: 1 / -1; border-top: 1px dashed #999; padding-top: 8px; color: #333; }
+  h2 { font-size: 14px; margin: 18px 0 6px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #ddd; }
+  td.n, th.n { text-align: right; }
+  .check { width: 28px; }
+  .totals { margin-top: 8px; text-align: right; }
+  .print { position: fixed; top: 12px; right: 12px; padding: 8px 14px; font: inherit; cursor: pointer; }
+  @media print { .print { display: none; } body { padding: 0; } }
+</style>
+</head>
+<body>
+<button class="print" onclick="window.print()">Print</button>
+{% for o in orders %}
+<section class="order">
+  <div class="label">
+    <div class="to">
+      To<br>
+      <strong>{{ o.ship_name }}</strong><br>
+      {{ o.ship_line1 }}{% if o.ship_line2 %}, {{ o.ship_line2 }}{% endif %}<br>
+      {% if o.ship_landmark %}Near {{ o.ship_landmark }}<br>{% endif %}
+      {{ o.ship_city }}, {{ o.ship_state }}<br>
+      <span class="pin">{{ o.ship_pincode }}</span><br>
+      Phone {{ o.ship_phone }}
+    </div>
+    <div class="side">
+      <div class="number">{{ o.number }}</div>
+      {{ o.created_at|date:"j M Y" }}<br>
+      {% if o.weight_grams %}{{ o.weight_grams }} g<br>{% endif %}
+      {% if o.courier %}{{ o.courier.name }}<br>{{ o.tracking_number }}<br>{% endif %}
+      {% if o.cash_to_collect %}<div class="cod">COD ₹{{ o.cash_to_collect }}</div>{% else %}<div class="cod">PREPAID</div>{% endif %}
+    </div>
+    <div class="from">
+      From {{ shop.shop_name }}{% if shop.support_phone %} · {{ shop.support_phone }}{% endif %}
+    </div>
+  </div>
+
+  <h2>Packing list</h2>
+  <table>
+    <tr><th class="check">✓</th><th>Item</th><th>SKU</th><th class="n">Qty</th><th class="n">Price</th></tr>
+    {% for i in o.items.all %}
+    <tr><td class="check">☐</td><td>{{ i.product_name }}{% if i.label %} ({{ i.label }}){% endif %}</td>
+      <td>{{ i.sku }}</td><td class="n">{{ i.quantity }}</td><td class="n">₹{{ i.line_total }}</td></tr>
+    {% endfor %}
+  </table>
+  <div class="totals">
+    Items ₹{{ o.subtotal }} · Delivery ₹{{ o.shipping_fee }}{% if o.cod_fee %} · COD fee ₹{{ o.cod_fee }}{% endif %}
+    · <strong>Total ₹{{ o.total }}</strong>
+  </div>
+</section>
+{% endfor %}
+</body>
+</html>

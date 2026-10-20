@@ -22,7 +22,7 @@ def notify(order, kind, note=""):
 
 
 def _send(order_pk, kind, note):
-    order = Order.objects.select_related("user").prefetch_related("items").get(pk=order_pk)
+    order = Order.objects.select_related("user", "courier").prefetch_related("items").get(pk=order_pk)
     shop = ShopSettings.load()
     try:
         if kind == "payment_submitted":
@@ -55,12 +55,19 @@ def _customer_message(order, kind, note, shop):
                 "\nPlease check and send the proof again from the order page.")
     return {
         S.CONFIRMED: (f"Payment received, order {n} confirmed", "We've received your payment. We'll pack your order soon."),
-        S.SHIPPED: (f"Order {n} is on its way", "Your order has been shipped."),
+        S.SHIPPED: (f"Order {n} is on its way", "Your order has been shipped." + _tracking(order)),
         S.DELIVERED: (f"Order {n} delivered", "Your order has been delivered. Thank you for shopping with us!"),
         S.CANCELLED: (f"Order {n} cancelled", "Your order has been cancelled." +
                       (" If you already paid, we'll refund you." if order.payment_method == Order.Payment.UPI else "")),
         S.RETURNED: (f"Return received for {n}", "We've received your returned order."),
     }[kind]
+
+
+def _tracking(order):
+    if not order.courier:
+        return ""
+    text = f"\nCourier: {order.courier.name}\nTracking number: {order.tracking_number}"
+    return text + (f"\nTrack it: {order.tracking_url}" if order.tracking_url else "")
 
 
 def _summary(order):

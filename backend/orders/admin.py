@@ -1,6 +1,8 @@
 from django.contrib import admin, messages
+from django.http import HttpResponse
 
-from .models import Cart, CartItem, Order, OrderEvent, OrderItem, PaymentProof
+from .models import Cart, CartItem, Courier, Order, OrderEvent, OrderItem, PaymentProof
+from .staff import render_slips
 from .status import StatusError, change_status
 
 
@@ -37,6 +39,11 @@ class OrderAdmin(admin.ModelAdmin):
     search_fields = ["number", "user__email", "ship_name", "ship_phone", "ship_pincode"]
     raw_id_fields = ["user"]
     inlines = [OrderItemInline, OrderEventInline]
+    actions = ["print_slips"]
+
+    @admin.action(description="Print packing slips and labels")
+    def print_slips(self, request, queryset):
+        return HttpResponse(render_slips(queryset.select_related("courier").prefetch_related("items")))
 
     def save_model(self, request, obj, form, change):
         # Status changes go through the same rules as the app: history, allowed steps, restocking.
@@ -58,3 +65,9 @@ class PaymentProofAdmin(admin.ModelAdmin):
     search_fields = ["reference", "order__number"]
     raw_id_fields = ["order"]
     readonly_fields = ["reviewed_by", "reviewed_at"]
+
+
+@admin.register(Courier)
+class CourierAdmin(admin.ModelAdmin):
+    list_display = ["name", "tracking_url", "sort_order", "is_active"]
+    list_editable = ["sort_order", "is_active"]

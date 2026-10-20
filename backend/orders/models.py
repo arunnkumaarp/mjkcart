@@ -38,6 +38,27 @@ class CartItem(models.Model):
         return self.variant.price * self.quantity
 
 
+class Courier(models.Model):
+    """A delivery company the shop ships with. The tracking link has {number} where the tracking number goes."""
+
+    name = models.CharField(max_length=60, unique=True)
+    tracking_url = models.CharField(max_length=300, blank=True, default="",
+                                    help_text="e.g. https://example.com/track?id={number}")
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+
+    def __str__(self):
+        return self.name
+
+    def tracking_link(self, number):
+        if not self.tracking_url:
+            return ""
+        return self.tracking_url.replace("{number}", number)
+
+
 class Order(models.Model):
     """A placed order. Address, prices and product names are copied so later edits don't change it."""
 
@@ -73,6 +94,9 @@ class Order(models.Model):
     cod_fee = models.DecimalField(max_digits=8, decimal_places=2)
     total = models.DecimalField(max_digits=12, decimal_places=2)
 
+    courier = models.ForeignKey(Courier, null=True, blank=True, on_delete=models.PROTECT, related_name="orders")
+    tracking_number = models.CharField(max_length=40, blank=True, default="")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -81,6 +105,18 @@ class Order(models.Model):
 
     def __str__(self):
         return self.number
+
+    @property
+    def tracking_url(self):
+        return self.courier.tracking_link(self.tracking_number) if self.courier and self.tracking_number else ""
+
+    @property
+    def weight_grams(self):
+        return sum(i.weight_grams * i.quantity for i in self.items.all())
+
+    @property
+    def cash_to_collect(self):
+        return self.total if self.payment_method == self.Payment.COD else 0
 
 
 class OrderItem(models.Model):

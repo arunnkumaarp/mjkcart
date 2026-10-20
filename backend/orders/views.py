@@ -220,12 +220,14 @@ class OrderSerializer(serializers.ModelSerializer):
     events = OrderEventSerializer(many=True, read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     can_cancel = serializers.SerializerMethodField()
+    courier_name = serializers.CharField(source="courier.name", read_only=True, default=None, allow_null=True)
+    tracking_url = serializers.CharField(read_only=True)
 
     class Meta:
         model = Order
         fields = ["number", "status", "status_label", "can_cancel", "payment_method", "payment", "items", "events",
                   "ship_name", "ship_phone", "ship_line1", "ship_line2", "ship_landmark", "ship_city",
-                  "ship_state", "ship_pincode", "subtotal", "shipping_fee", "cod_fee", "total", "created_at"]
+                  "ship_state", "ship_pincode", "courier_name", "tracking_number", "tracking_url", "subtotal", "shipping_fee", "cod_fee", "total", "created_at"]
 
     @extend_schema_field(LatestPaymentSerializer(allow_null=True))
     def get_payment(self, order):
@@ -330,4 +332,4 @@ def cancel_order(request, number):
 
 
 def my_orders(request):
-    return request.user.orders.prefetch_related("items", "events", "payment_proofs")
+    return request.user.orders.select_related("courier").prefetch_related("items", "events", "payment_proofs")

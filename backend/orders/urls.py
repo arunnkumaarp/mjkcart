@@ -6,6 +6,7 @@ from . import payments, staff, views
 router = DefaultRouter()
 router.register("staff/orders", staff.StaffOrderViewSet, basename="staff-order")
 router.register("staff/payments", payments.StaffPaymentViewSet, basename="staff-payment")
+router.register("staff/couriers", staff.CourierViewSet, basename="staff-courier")
 
 urlpatterns = [
     path("cart/", views.cart, name="cart"),

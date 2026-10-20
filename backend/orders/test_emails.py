@@ -7,6 +7,7 @@ from rest_framework.test import APIClient
 from accounts.models import Address, User
 from catalog.models import Product, Variant
 from core.models import ShopSettings
+from orders.models import Courier
 
 
 @pytest.fixture
@@ -44,8 +45,11 @@ def place(customer, address, tea, method):
                          format="json").json()["number"]
 
 
-def move(staff, number, status):
-    return staff.post(f"/api/v1/staff/orders/{number}/status/", {"status": status}, format="json")
+def move(staff, number, status, note=""):
+    data = {"status": status, "note": note}
+    if status == "shipped":
+        data |= {"courier": Courier.objects.get(name="DHL").id, "tracking_number": "1234567890"}
+    return staff.post(f"/api/v1/staff/orders/{number}/status/", data, format="json")
 
 
 def test_cod_order_emails_customer_and_shop(setup, emails):

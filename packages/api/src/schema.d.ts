@@ -401,6 +401,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/couriers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Couriers to choose from when shipping. Add or edit them in Django admin. */
+        get: operations["v1_staff_couriers_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/couriers/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Couriers to choose from when shipping. Add or edit them in Django admin. */
+        get: operations["v1_staff_couriers_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/orders/": {
         parameters: {
             query?: never;
@@ -446,6 +480,23 @@ export interface paths {
         put?: never;
         /** @description All orders for the shop team, newest first, with search by number, customer, phone or pincode. */
         post: operations["v1_staff_orders_status_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/orders/slips/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description All orders for the shop team, newest first, with search by number, customer, phone or pincode. */
+        get: operations["v1_staff_orders_slips_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -636,6 +687,13 @@ export interface components {
             address: number;
             payment_method: components["schemas"]["PaymentMethodEnum"];
         };
+        Courier: {
+            readonly id: number;
+            name: string;
+            /** @description e.g. https://example.com/track?id={number} */
+            tracking_url?: string;
+            is_active?: boolean;
+        };
         Detail: {
             detail: string;
         };
@@ -676,6 +734,9 @@ export interface components {
             ship_city: string;
             ship_state: string;
             ship_pincode: string;
+            readonly courier_name: string | null;
+            tracking_number?: string;
+            readonly tracking_url: string;
             /** Format: decimal */
             subtotal: string;
             /** Format: decimal */
@@ -962,6 +1023,9 @@ export interface components {
             ship_city: string;
             ship_state: string;
             ship_pincode: string;
+            readonly courier_name: string | null;
+            tracking_number?: string;
+            readonly tracking_url: string;
             /** Format: decimal */
             subtotal: string;
             /** Format: decimal */
@@ -1000,6 +1064,9 @@ export interface components {
             status: components["schemas"]["OrderStatusEnum"];
             /** @default  */
             note: string;
+            courier?: number | null;
+            /** @default  */
+            tracking_number: string;
         };
         TokenRefresh: {
             readonly access: string;
@@ -2114,6 +2181,50 @@ export interface operations {
             };
         };
     };
+    v1_staff_couriers_list: {
+        parameters: {
+            query?: {
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Courier"][];
+                };
+            };
+        };
+    };
+    v1_staff_couriers_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this courier. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Courier"];
+                };
+            };
+        };
+    };
     v1_staff_orders_list: {
         parameters: {
             query?: {
@@ -2209,6 +2320,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    v1_staff_orders_slips_retrieve: {
+        parameters: {
+            query: {
+                /** @description Comma-separated order numbers, e.g. MJK000001,MJK000002 */
+                numbers: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
                 };
             };
         };

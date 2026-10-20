@@ -13,6 +13,7 @@ export type Order = components["schemas"]["Order"];
 export type StaffOrder = components["schemas"]["StaffOrder"];
 export type LatestPayment = components["schemas"]["LatestPayment"];
 export type StaffPayment = components["schemas"]["StaffPayment"];
+export type Courier = components["schemas"]["Courier"];
 export type Quote = components["schemas"]["Quote"];
 export type User = components["schemas"]["User"];
 export type Address = components["schemas"]["Address"];
