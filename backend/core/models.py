@@ -10,11 +10,16 @@ class ShopSettings(models.Model):
     # Brand, shown on the storefront. Admins upload their own logo; without one the name is set as a wordmark.
     logo = models.ImageField(upload_to="shop/", blank=True)
     tagline = models.CharField(max_length=120, blank=True, default="Good things, packed with care.")
+    # Paragraphs separated by a blank line. Sample text; the shop replaces it with its own.
     story = models.TextField(blank=True, default=(
-        "MJK began at a kitchen table with one idea: the things you use every day should be made well, "
-        "priced fairly and arrive like a gift from someone who cares. We choose every product ourselves, "
-        "pack every order by hand and answer every message. We would rather sell fewer things we believe "
-        "in than a thousand we don't."))
+        "MJK started with three initials on a kitchen table and a box of things we loved too much to keep "
+        "to ourselves.\n\n"
+        "We had spent years buying things that looked good in a photograph and gave up in a month. So we "
+        "began asking one question of everything we use: would we give this to someone we love?\n\n"
+        "Every product in this shop has passed that question. We pack each order ourselves, tick every item "
+        "off by hand and write your pincode large enough for any courier to read.\n\n"
+        "It is a slower way to run a shop. But somewhere in India a parcel is arriving at a door because of "
+        "it, and that is the whole point."))
     support_phone = models.CharField(max_length=15, blank=True, default="")
     support_email = models.EmailField(blank=True, default="")
 

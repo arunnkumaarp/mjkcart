@@ -1,0 +1,45 @@
+<section #section id="shop" class="shop" aria-labelledby="shop-title" mjkReveal>
+  <div class="shop__list" (pointerleave)="leave()">
+    <h2 id="shop-title" class="giant rise">Shop</h2>
+
+    @for (group of store.categoriesWithProducts(); track group.category.id; let first = $first) {
+      <details class="bar rise" [open]="first">
+        <summary>
+          <span>{{ group.category.name }}</span>
+          <span class="bar__count num">{{ group.products.length }}</span>
+        </summary>
+        <ul class="items" [class.is-dimming]="active()">
+          @for (p of group.products; track p.id) {
+            <li>
+              <a #row class="item" [routerLink]="['/p', p.slug]"
+                 (pointerenter)="preview(p, row)" (focus)="preview(p, row)">
+                <span class="item__name">{{ p.name }}</span>
+                <span class="item__price num">
+                  @if (p.in_stock) { from {{ money(p.price_from) }} } @else { Out of stock }
+                </span>
+                <mjk-plate class="item__thumb" [product]="p" />
+              </a>
+            </li>
+          }
+        </ul>
+      </details>
+    } @empty {
+      @if (store.loaded()) {
+        <p class="empty">Nothing is on the shelves yet. New things are being packed; come back soon.</p>
+      } @else {
+        <p class="empty">Opening the shelves…</p>
+      }
+    }
+    <a class="all rise" routerLink="/products">See every product</a>
+  </div>
+
+  @if (shown(); as p) {
+    <figure #frame class="frame" aria-hidden="true" [style.--y.px]="frameY()">
+      <mjk-plate [product]="p" ground="#ff8633" />
+      <figcaption>
+        <span>{{ p.name }}</span>
+        <span class="num">from {{ money(p.price_from) }}</span>
+      </figcaption>
+    </figure>
+  }
+</section>

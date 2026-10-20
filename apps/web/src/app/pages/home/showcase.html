@@ -1,0 +1,40 @@
+@if (product(); as p) {
+  <section class="showcase" aria-labelledby="showcase-title" mjkReveal>
+    <div class="showcase__plate rise">
+      <mjk-plate [product]="p" [variantLabel]="variant()?.label ?? ''" ground="#ffffff" />
+    </div>
+
+    <div class="showcase__text">
+      @if (p.variants.length > 1) {
+        <div class="tabs rise" role="radiogroup" aria-label="Choose an option">
+          @for (v of p.variants; track v.id) {
+            <button type="button" role="radio" class="tabs__tab" [attr.aria-checked]="v.id === variant()?.id"
+                    (click)="choose(v.id)">{{ v.label }}</button>
+          }
+        </div>
+      } @else {
+        <p class="tabs rise">{{ category() }}</p>
+      }
+
+      <div class="showcase__middle">
+        <h2 id="showcase-title" class="rise">{{ p.name }}</h2>
+        <p class="desc rise">{{ p.description }}</p>
+        @if (variant(); as v) {
+          <p class="price rise num">
+            <strong>{{ money(v.price) }}</strong>
+            @if (v.mrp && v.mrp !== v.price) { <s>MRP {{ money(v.mrp) }}</s> }
+            <span>{{ stockNote() }}</span>
+          </p>
+        }
+      </div>
+
+      <div class="cells rise">
+        <button type="button" class="cell cell--ink" (click)="add()" [disabled]="soldOut()">
+          {{ soldOut() ? 'Out of stock' : 'Add to cart' }}
+        </button>
+        <a class="cell cell--tone" [routerLink]="['/p', p.slug]">See details</a>
+        <p class="added" aria-live="polite">{{ added() }}</p>
+      </div>
+    </div>
+  </section>
+}

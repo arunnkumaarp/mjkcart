@@ -1,0 +1,70 @@
+<header class="hero">
+  <nav class="top" aria-label="Main">
+    <a class="top__account" routerLink="/login">Log in</a>
+    <a class="top__mark" routerLink="/" aria-label="{{ shop()?.shop_name ?? 'MJK Cart' }} home">
+      @if (shop()?.logo; as logo) {
+        <img [src]="logo" alt="" height="28" />
+      } @else {
+        {{ shop()?.shop_name ?? 'MJK Cart' }}
+      }
+    </a>
+    <a class="top__cart" routerLink="/cart">Cart <span class="num">({{ cart.count() }})</span></a>
+  </nav>
+
+  <div class="title">
+    <h1 class="arrive">{{ shop()?.shop_name ?? 'MJK Cart' }}</h1>
+    <p class="support arrive" style="--i: 1">
+      {{ shop()?.tagline || 'Good things, packed with care.' }}
+      Chosen and packed by hand, sent to any pincode in India.
+    </p>
+  </div>
+
+  <div class="stack">
+    @for (f of folders; track f.name; let i = $index) {
+      <a class="folder folder--{{ f.tone }}" [href]="f.href" [style.--row]="i" [style.--tab-x]="f.x">
+        <span class="tab">{{ f.name }}</span>
+      </a>
+    }
+
+    <section class="front" aria-labelledby="front-title">
+      <a class="tab tab--front" href="#shop">Shop</a>
+      <div class="front__body">
+        <div class="front__intro">
+          <h2 id="front-title" class="front__title">Where to send it?</h2>
+          <p>Type your pincode and see your parcel's label, with what delivery costs and how you can pay.</p>
+        </div>
+        <a class="button front__action" href="#shop">Start shopping</a>
+
+        <form class="label" aria-label="Your shipping label" (submit)="$event.preventDefault()">
+          <div class="label__main">
+            <p class="label__from">From {{ shop()?.shop_name ?? 'MJK Cart' }}, packed by hand</p>
+            <label class="label__field">
+              <span>Deliver to</span>
+              <input name="name" autocomplete="name" placeholder="Your name" maxlength="40"
+                     [value]="name()" (input)="name.set($any($event.target).value)" />
+            </label>
+            <label class="label__field label__field--pin">
+              <span>Pincode</span>
+              <input class="num" name="pincode" inputmode="numeric" autocomplete="postal-code" placeholder="600001"
+                     [value]="pincode()" (input)="onPincode($any($event.target).value)" />
+            </label>
+            <p class="label__zone" aria-live="polite">
+              @if (zone(); as z) {
+                {{ z }}
+              } @else if (pinTyped()) {
+                A pincode has six digits and doesn't start with 0
+              } @else {
+                We deliver to every pincode in India
+              }
+            </p>
+          </div>
+          <div class="label__stub">
+            <p class="label__stamp">{{ shop()?.cod_enabled ? 'COD or prepaid' : 'Prepaid' }}</p>
+            <p>{{ delivery() }}</p>
+            <p>{{ payment() }}</p>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+</header>

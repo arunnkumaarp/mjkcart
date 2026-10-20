@@ -1,0 +1,23 @@
+.story { background: #ffb27a; padding: var(--section-gap) var(--margin); display: grid; justify-items: center; }
+.sheet { width: min(640px, 100%); background: var(--paper); color: var(--paper-ink); padding: 60px 60px 34px; }
+.portrait {
+  width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: var(--ink); color: var(--bg);
+  display: grid; place-items: center; font-size: var(--step-small); font-weight: 600; letter-spacing: 0.02em; margin-bottom: 28px;
+}
+.portrait img { width: 100%; height: 100%; object-fit: cover; }
+.sheet p { font-size: var(--step-body); line-height: 1.55; }
+.sheet p + p { margin-top: 1.55em; }
+.sheet .sign { margin-top: 2em; font-size: var(--step-lead); font-weight: 500; letter-spacing: -0.01em; }
+.sheet .role { margin-top: 2px; font-size: var(--step-small); color: var(--paper-muted); }
+.strip {
+  margin: 40px -60px 0; padding: 22px 60px 26px; border-top: 5px dotted var(--bg);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; min-height: 72px; font-weight: 500;
+}
+.strip span { color: var(--paper-muted); font-weight: 400; }
+.strip a { text-underline-offset: 4px; }
+@media (max-width: 760px) {
+  .story { padding: 72px 0; }
+  .sheet { padding: 40px 24px 30px; }
+  .portrait { width: 40px; height: 40px; }
+  .strip { margin: 32px -24px 0; padding: 20px 24px 24px; flex-direction: column; align-items: flex-start; }
+}

@@ -1,0 +1,50 @@
+<footer class="footer on-ink">
+  <div class="mark" role="img" [attr.aria-label]="shop()?.shop_name ?? 'MJK Cart'">
+    @for (l of letters(); track $index) {
+      <span class="block" [style.background]="l.bg" [style.height.%]="l.h"><span>{{ l.char }}</span></span>
+    }
+  </div>
+
+  <div class="links">
+    <nav aria-label="Shop">
+      <h2>Shop</h2>
+      @for (c of store.categories().slice(0, 5); track c.id) { <a [routerLink]="['/products']" [queryParams]="{ category: c.slug }">{{ c.name }}</a> }
+    </nav>
+    <nav aria-label="Help">
+      <h2>Help</h2>
+      <a href="#questions">Questions</a>
+      <a href="#journey">How it reaches you</a>
+      <a routerLink="/orders">Track an order</a>
+    </nav>
+    <nav aria-label="Account">
+      <h2>Account</h2>
+      <a routerLink="/login">Log in</a>
+      <a routerLink="/orders">Your orders</a>
+      <a routerLink="/cart">Cart</a>
+    </nav>
+    <nav aria-label="About">
+      <h2>About</h2>
+      <a href="#story">Our story</a>
+      <a href="#credits">Picture credits</a>
+    </nav>
+    <div class="contact">
+      <h2>Write to us</h2>
+      @if (shop()?.support_email; as email) { <a [href]="'mailto:' + email">{{ email }}</a> }
+      @if (shop()?.support_phone; as phone) { <a class="num" [href]="'tel:+91' + phone">+91 {{ phone }}</a> }
+      <p>Online only. We deliver to every pincode in India.</p>
+    </div>
+  </div>
+
+  <p id="credits" class="credits">
+    Pictures:
+    @for (c of credits(); track c.page; let last = $last) {
+      <a [href]="c.page" target="_blank" rel="noopener">{{ c.title }}</a>{{ c.creator && c.creator !== 'Unknown author' ? ' by ' + c.creator : '' }}, {{ c.license }}{{ last ? '.' : ';' }}
+    }
+    Product drawings are placeholders until the shop's own photographs are added.
+  </p>
+
+  <div class="last">
+    <p>© {{ year }} {{ shop()?.shop_name ?? 'MJK Cart' }}</p>
+    <button type="button" class="button button--small" (click)="top()">Back to top</button>
+  </div>
+</footer>

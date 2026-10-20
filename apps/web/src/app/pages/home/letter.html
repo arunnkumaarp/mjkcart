@@ -1,0 +1,21 @@
+<section id="story" class="story" aria-labelledby="story-title" mjkReveal>
+  <article class="sheet rise" [style.clip-path]="clip">
+    <h2 id="story-title" class="visually-hidden">Our story</h2>
+    <div class="portrait" aria-hidden="true">
+      @if (shop()?.logo; as logo) { <img [src]="logo" alt="" width="44" height="44" /> } @else { {{ initials() }} }
+    </div>
+    @for (p of paragraphs(); track $index) {
+      <p class="rise">{{ p }}</p>
+    }
+    <p class="sign rise">The {{ shop()?.shop_name ?? 'MJK Cart' }} team</p>
+    <p class="role rise">Packing orders somewhere in India</p>
+
+    @if (shop()?.support_email || shop()?.support_phone) {
+      <div class="strip">
+        <span>Write to us</span>
+        @if (shop()?.support_email; as email) { <a [href]="'mailto:' + email">{{ email }}</a> }
+        @if (shop()?.support_phone; as phone) { <a class="num" [href]="'tel:+91' + phone">+91 {{ phone }}</a> }
+      </div>
+    }
+  </article>
+</section>

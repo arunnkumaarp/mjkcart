@@ -1,0 +1,15 @@
+.faq {
+  background: var(--paper); color: var(--paper-ink); padding: var(--section-gap) var(--margin) calc(var(--section-gap) * 0.6);
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 var(--gutter);
+}
+h2 { grid-column: 1 / 4; font-size: var(--step-title); line-height: 1; }
+.answers { grid-column: 5 / 13; columns: 2; column-gap: 56px; }
+.answers p { break-inside: avoid; margin-bottom: 20px; font-size: var(--step-body); line-height: 1.55; max-width: 38ch; }
+.answers strong { font-weight: 500; }
+@media (max-width: 900px) {
+  .faq { grid-template-columns: 1fr; padding: 72px 20px; }
+  h2, .answers { grid-column: 1; }
+  h2 { margin-bottom: 28px; }
+  .answers { columns: 1; }
+  .answers p { margin-bottom: 18px; max-width: none; }
+}

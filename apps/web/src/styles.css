@@ -1,0 +1,83 @@
+/* MJK storefront tokens. Direction: "the page is the object" (taste-skill seed 430081439). */
+:root {
+  --bg: #ff7a1f;          /* the orange ground */
+  --surface: #ff8633;     /* one step off the ground */
+  --ink: #050f16;         /* blue-black type */
+  --muted: #5a2306;       /* soft ink on orange */
+  --accent: #050f16;      /* the action: a solid block of ink */
+  --accent-ink: #ff7a1f;
+  --paper: #ffffff;       /* the white field */
+  --paper-ink: #050f16;
+  --paper-muted: #4a4f55;
+  --ink-soft: #c9ced3;    /* soft text on the ink field */
+  --ink-step: #13212b;    /* one step off the ink field */
+  --paper-step: #f1f1ef;  /* one step off the white field */
+
+  --font: "Bricolage Grotesque", system-ui, sans-serif;
+  --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --step-title: clamp(1.75rem, 1.45rem + 0.9vw, 2.5rem);  /* section headings */
+  --step-head: clamp(2rem, 1.3rem + 3.2vw, 4rem);
+  --step-display: clamp(4.5rem, 10vw, 10rem);
+
+  --margin: clamp(16px, 3vw, 32px);
+  --gutter: clamp(16px, 2vw, 28px);
+  --section-gap: clamp(72px, 9vw, 160px);
+  --tab-h: 40px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-hover: 160ms;
+  --t-enter: 640ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--step-body);
+  line-height: 1.5;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; }
+button, input { font: inherit; color: inherit; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-weight: 600; letter-spacing: -0.04em; line-height: 0.92; text-wrap: balance; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.on-ink :focus-visible { outline-color: var(--bg); }
+::selection { background: var(--ink); color: var(--bg); }
+.num { font-variant-numeric: tabular-nums; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* The one button shape on the page: a solid block, square corners. */
+.button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+  min-height: 52px; padding: 0 28px; border: 0; border-radius: 0;
+  background: var(--accent); color: var(--accent-ink);
+  font-size: var(--step-body); font-weight: 600; text-decoration: none; cursor: pointer;
+  transition: transform var(--t-hover) var(--ease-out), background-color var(--t-hover) ease;
+}
+.button:hover { transform: translateY(-2px); }
+.button:active { transform: translateY(1px); }
+
+/* Entrances: parts of each section rise in turn. Without script or with reduced motion, all is visible. */
+@media (prefers-reduced-motion: no-preference) {
+  .js .rise { opacity: 0; transform: translateY(24px); }
+  .js .is-in .rise {
+    opacity: 1; transform: none;
+    transition: opacity var(--t-enter) var(--ease-out), transform var(--t-enter) var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 75ms);
+  }
+  /* The first screen arrives on load and is settled well inside 1.2s. */
+  .arrive { animation: arrive 720ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 110ms); }
+}
+@keyframes arrive { from { opacity: 0; transform: translateY(28px); } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .button, .button:hover { transition: none; transform: none; }
+}

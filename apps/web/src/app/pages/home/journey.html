@@ -1,0 +1,39 @@
+<section id="journey" class="journey on-ink" aria-labelledby="journey-title" mjkReveal>
+  <div class="journey__top">
+    <h2 id="journey-title" class="rise">How it reaches you</h2>
+    <div class="journey__buttons rise">
+      <button type="button" (click)="step(-1)" aria-label="Back">←</button>
+      <button type="button" (click)="step(1)" aria-label="Forward">→</button>
+    </div>
+  </div>
+  <div class="journey__bar rise" aria-hidden="true"><span [style.--p]="progress()"></span></div>
+
+  <ol #row class="journey__row" (scroll)="onScroll()" tabindex="0" aria-label="The journey of an order">
+    @for (m of moments(); track m.caption) {
+      <li class="rise">
+        <h3>{{ m.caption }}</h3>
+        <p>{{ m.text }}</p>
+        <div class="space" [style.--space.px]="m.space"></div>
+        @if (m.video) {
+          <div class="photo">
+            <video [src]="m.video" [poster]="m.picture" [attr.aria-label]="m.alt" muted loop playsinline autoplay
+                   preload="metadata" width="560" height="700"></video>
+          </div>
+        } @else if (m.picture) {
+          <div class="photo"><img [src]="m.picture" [alt]="m.alt" width="560" height="700" loading="lazy" /></div>
+        } @else {
+          <svg class="photo photo--drawn" viewBox="0 0 280 350" role="img" aria-label="A packing list with every item ticked">
+            <rect width="280" height="350" fill="#ff7a1f" />
+            <rect x="34" y="40" width="212" height="270" fill="#ffffff" />
+            <rect x="54" y="66" width="120" height="16" fill="#050f16" />
+            @for (y of [116, 160, 204, 248]; track y) {
+              <rect x="54" [attr.y]="y" width="22" height="22" fill="#050f16" />
+              <path [attr.d]="'M58 ' + (y + 11) + ' l6 6 l10 -12'" stroke="#ff7a1f" stroke-width="4" fill="none" />
+              <rect x="90" [attr.y]="y + 4" width="120" height="12" fill="#c9ced3" />
+            }
+          </svg>
+        }
+      </li>
+    }
+  </ol>
+</section>

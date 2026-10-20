@@ -20,3 +20,12 @@ node_modules/
 .DS_Store
 .vscode/
 .idea/
+
+# Angular
+apps/web/dist/
+apps/web/.angular/
+
+# taste-skill working files: keep notes and the direction, not screenshots or full-size downloads
+apps/web/.taste-skill/inspect/
+apps/web/assets/*
+!apps/web/assets/credits.json
