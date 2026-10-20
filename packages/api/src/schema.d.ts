@@ -609,6 +609,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/reports/daily/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One row per day in the period, including days with no sales, for a chart. */
+        get: operations["v1_staff_reports_daily_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/reports/low-stock/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Variants still on sale that are running out, emptiest first. */
+        get: operations["v1_staff_reports_low_stock_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/reports/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_staff_reports_summary_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/reports/top-products/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_staff_reports_top_products_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/variants/": {
         parameters: {
             query?: never;
@@ -774,6 +840,13 @@ export interface components {
             tracking_url?: string;
             is_active?: boolean;
         };
+        Day: {
+            /** Format: date */
+            date: string;
+            orders: number;
+            /** Format: decimal */
+            revenue: string;
+        };
         Detail: {
             detail: string;
         };
@@ -800,8 +873,21 @@ export interface components {
             refresh: string;
             user: components["schemas"]["User"];
         };
+        LowStock: {
+            readonly id: number;
+            product_name: string;
+            product_slug: string;
+            label: string;
+            sku?: string | null;
+            stock?: number;
+        };
         MergeRequest: {
             items: components["schemas"]["AddItemRequest"][];
+        };
+        MethodTotals: {
+            orders: number;
+            /** Format: decimal */
+            revenue: string;
         };
         Order: {
             number?: string;
@@ -1197,11 +1283,45 @@ export interface components {
             /** @default  */
             tracking_number: string;
         };
+        Summary: {
+            /** Format: date */
+            date_from: string;
+            /** Format: date */
+            date_to: string;
+            orders: number;
+            /**
+             * Format: decimal
+             * @description Order totals incl. delivery and fees
+             */
+            revenue: string;
+            items_sold: number;
+            /** Format: decimal */
+            average_order: string;
+            /** Format: decimal */
+            discounts: string;
+            cod: components["schemas"]["MethodTotals"];
+            upi: components["schemas"]["MethodTotals"];
+            cancelled: number;
+            returned: number;
+            payments_to_check: number;
+            to_pack: number;
+            to_ship: number;
+        };
         TokenRefresh: {
             readonly access: string;
         };
         TokenRefreshRequest: {
             refresh: string;
+        };
+        TopProduct: {
+            product_name: string;
+            label: string;
+            quantity: number;
+            /**
+             * Format: decimal
+             * @description Item prices, before coupons
+             */
+            revenue: string;
         };
         User: {
             readonly id: number;
@@ -2745,6 +2865,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Detail"];
+                };
+            };
+        };
+    };
+    v1_staff_reports_daily_list: {
+        parameters: {
+            query?: {
+                /** @description Default: 29 days before date_to */
+                date_from?: string;
+                /** @description Default: today */
+                date_to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Day"][];
+                };
+            };
+        };
+    };
+    v1_staff_reports_low_stock_list: {
+        parameters: {
+            query?: {
+                /** @description Stock at or below this. Default 5 */
+                threshold?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LowStock"][];
+                };
+            };
+        };
+    };
+    v1_staff_reports_summary_retrieve: {
+        parameters: {
+            query?: {
+                /** @description Default: 29 days before date_to */
+                date_from?: string;
+                /** @description Default: today */
+                date_to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Summary"];
+                };
+            };
+        };
+    };
+    v1_staff_reports_top_products_list: {
+        parameters: {
+            query?: {
+                /** @description Default: 29 days before date_to */
+                date_from?: string;
+                /** @description Default: today */
+                date_to?: string;
+                /** @description Default 10, at most 50 */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopProduct"][];
                 };
             };
         };

@@ -1643,6 +1643,121 @@ paths:
               schema:
                 $ref: '#/components/schemas/Detail'
           description: ''
+  /api/v1/staff/reports/daily/:
+    get:
+      operationId: v1_staff_reports_daily_list
+      description: One row per day in the period, including days with no sales, for
+        a chart.
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: 'Default: 29 days before date_to'
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: 'Default: today'
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Day'
+          description: ''
+  /api/v1/staff/reports/low-stock/:
+    get:
+      operationId: v1_staff_reports_low_stock_list
+      description: Variants still on sale that are running out, emptiest first.
+      parameters:
+      - in: query
+        name: threshold
+        schema:
+          type: integer
+        description: Stock at or below this. Default 5
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LowStock'
+          description: ''
+  /api/v1/staff/reports/summary/:
+    get:
+      operationId: v1_staff_reports_summary_retrieve
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: 'Default: 29 days before date_to'
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: 'Default: today'
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Summary'
+          description: ''
+  /api/v1/staff/reports/top-products/:
+    get:
+      operationId: v1_staff_reports_top_products_list
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: 'Default: 29 days before date_to'
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: 'Default: today'
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Default 10, at most 50
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TopProduct'
+          description: ''
   /api/v1/variants/:
     get:
       operationId: v1_variants_list
@@ -2186,6 +2301,22 @@ components:
       required:
       - id
       - name
+    Day:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        orders:
+          type: integer
+        revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - date
+      - orders
+      - revenue
     Detail:
       type: object
       properties:
@@ -2243,6 +2374,31 @@ components:
       - access
       - refresh
       - user
+    LowStock:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product_name:
+          type: string
+        product_slug:
+          type: string
+        label:
+          type: string
+        sku:
+          type: string
+          nullable: true
+          maxLength: 40
+        stock:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - id
+      - label
+      - product_name
+      - product_slug
     MergeRequest:
       type: object
       properties:
@@ -2252,6 +2408,18 @@ components:
             $ref: '#/components/schemas/AddItemRequest'
       required:
       - items
+    MethodTotals:
+      type: object
+      properties:
+        orders:
+          type: integer
+        revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+      required:
+      - orders
+      - revenue
     Order:
       type: object
       properties:
@@ -3204,6 +3372,61 @@ components:
           maxLength: 40
       required:
       - status
+    Summary:
+      type: object
+      properties:
+        date_from:
+          type: string
+          format: date
+        date_to:
+          type: string
+          format: date
+        orders:
+          type: integer
+        revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          description: Order totals incl. delivery and fees
+        items_sold:
+          type: integer
+        average_order:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        discounts:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        cod:
+          $ref: '#/components/schemas/MethodTotals'
+        upi:
+          $ref: '#/components/schemas/MethodTotals'
+        cancelled:
+          type: integer
+        returned:
+          type: integer
+        payments_to_check:
+          type: integer
+        to_pack:
+          type: integer
+        to_ship:
+          type: integer
+      required:
+      - average_order
+      - cancelled
+      - cod
+      - date_from
+      - date_to
+      - discounts
+      - items_sold
+      - orders
+      - payments_to_check
+      - returned
+      - revenue
+      - to_pack
+      - to_ship
+      - upi
     TokenRefresh:
       type: object
       properties:
@@ -3221,6 +3444,25 @@ components:
           minLength: 1
       required:
       - refresh
+    TopProduct:
+      type: object
+      properties:
+        product_name:
+          type: string
+        label:
+          type: string
+        quantity:
+          type: integer
+        revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          description: Item prices, before coupons
+      required:
+      - label
+      - product_name
+      - quantity
+      - revenue
     User:
       type: object
       properties:
