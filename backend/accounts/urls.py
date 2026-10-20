@@ -2,10 +2,11 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from . import views
+from . import team, views
 
 router = DefaultRouter()
 router.register("me/addresses", views.AddressViewSet, basename="address")
+router.register("staff/team", team.TeamViewSet, basename="team")
 
 urlpatterns = [
     path("auth/otp/send/", views.send_otp, name="otp-send"),

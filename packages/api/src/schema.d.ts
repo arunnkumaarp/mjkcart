@@ -675,6 +675,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/team/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Admins add staff by email, change roles, and remove people from the team (they stay customers). */
+        get: operations["v1_staff_team_list"];
+        put?: never;
+        /** @description Add someone to the team. An existing customer account is promoted; otherwise one is made. */
+        post: operations["v1_staff_team_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/team/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Admins add staff by email, change roles, and remove people from the team (they stay customers). */
+        get: operations["v1_staff_team_retrieve"];
+        put?: never;
+        post?: never;
+        /** @description Admins add staff by email, change roles, and remove people from the team (they stay customers). */
+        delete: operations["v1_staff_team_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Admins add staff by email, change roles, and remove people from the team (they stay customers). */
+        patch: operations["v1_staff_team_partial_update"];
+        trace?: never;
+    };
     "/api/v1/variants/": {
         parameters: {
             query?: never;
@@ -881,6 +918,36 @@ export interface components {
             sku?: string | null;
             stock?: number;
         };
+        Member: {
+            readonly id: number;
+            /**
+             * Email address
+             * Format: email
+             */
+            readonly email: string;
+            first_name?: string;
+            readonly phone: string;
+            role: components["schemas"]["MemberRoleEnum"];
+            /**
+             * Superuser status
+             * @description Designates that this user has all permissions without explicitly assigning them.
+             */
+            readonly is_superuser: boolean;
+            /** Format: date-time */
+            readonly last_login: string | null;
+            /** Format: date-time */
+            readonly date_joined: string;
+        };
+        MemberRequest: {
+            first_name?: string;
+            role: components["schemas"]["MemberRoleEnum"];
+        };
+        /**
+         * @description * `staff` - Staff
+         *     * `admin` - Admin
+         * @enum {string}
+         */
+        MemberRoleEnum: "staff" | "admin";
         MergeRequest: {
             items: components["schemas"]["AddItemRequest"][];
         };
@@ -1084,6 +1151,10 @@ export interface components {
             per_customer_limit?: number | null;
             is_active?: boolean;
         };
+        PatchedMemberRequest: {
+            first_name?: string;
+            role?: components["schemas"]["MemberRoleEnum"];
+        };
         PatchedProductImageRequest: {
             product?: number;
             /** Format: binary */
@@ -1211,13 +1282,6 @@ export interface components {
         RejectRequest: {
             reason: string;
         };
-        /**
-         * @description * `customer` - Customer
-         *     * `staff` - Staff
-         *     * `admin` - Admin
-         * @enum {string}
-         */
-        RoleEnum: "customer" | "staff" | "admin";
         StaffOrder: {
             number?: string;
             status: components["schemas"]["OrderStatusEnum"];
@@ -1332,8 +1396,15 @@ export interface components {
             readonly email: string;
             first_name?: string;
             phone?: string;
-            readonly role: components["schemas"]["RoleEnum"];
+            readonly role: components["schemas"]["UserRoleEnum"];
         };
+        /**
+         * @description * `customer` - Customer
+         *     * `staff` - Staff
+         *     * `admin` - Admin
+         * @enum {string}
+         */
+        UserRoleEnum: "customer" | "staff" | "admin";
         Variant: {
             readonly id: number;
             product: number;
@@ -2961,6 +3032,124 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TopProduct"][];
+                };
+            };
+        };
+    };
+    v1_staff_team_list: {
+        parameters: {
+            query?: {
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Member"][];
+                };
+            };
+        };
+    };
+    v1_staff_team_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["MemberRequest"];
+                "multipart/form-data": components["schemas"]["MemberRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Member"];
+                };
+            };
+        };
+    };
+    v1_staff_team_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this user. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Member"];
+                };
+            };
+        };
+    };
+    v1_staff_team_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this user. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_staff_team_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this user. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedMemberRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedMemberRequest"];
+                "multipart/form-data": components["schemas"]["PatchedMemberRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Member"];
                 };
             };
         };
