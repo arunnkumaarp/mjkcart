@@ -1774,8 +1774,9 @@ paths:
           description: ''
     patch:
       operationId: v1_staff_shop_partial_update
-      description: Admins edit the shop's name, contacts, UPI, COD and delivery fees.
-        Upload upi_qr as multipart form data; send it empty to remove it.
+      description: Admins edit the shop's name, logo, tagline, story, contacts, UPI,
+        COD and delivery fees. Upload logo or upi_qr as multipart form data; send
+        one empty to remove it.
       tags:
       - v1
       requestBody:
@@ -3131,6 +3132,15 @@ components:
           type: string
           minLength: 1
           maxLength: 80
+        logo:
+          type: string
+          format: binary
+          nullable: true
+        tagline:
+          type: string
+          maxLength: 120
+        story:
+          type: string
         support_phone:
           type: string
           pattern: ^([6-9]\d{9})?$
@@ -3357,6 +3367,14 @@ components:
         shop_name:
           type: string
           maxLength: 80
+        logo:
+          type: string
+          format: uri
+        tagline:
+          type: string
+          maxLength: 120
+        story:
+          type: string
         support_phone:
           type: string
           maxLength: 15
@@ -3440,6 +3458,15 @@ components:
         shop_name:
           type: string
           maxLength: 80
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        tagline:
+          type: string
+          maxLength: 120
+        story:
+          type: string
         support_phone:
           type: string
           pattern: ^([6-9]\d{9})?$

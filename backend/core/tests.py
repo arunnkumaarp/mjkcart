@@ -57,6 +57,10 @@ def test_upload_and_remove_upi_qr(settings, tmp_path):
     res = admin.patch("/api/v1/staff/shop/", {"upi_qr": ""}, format="multipart")
     assert res.json()["upi_qr"] is None and not any(tmp_path.rglob("*.png"))
 
+    res = admin.patch("/api/v1/staff/shop/", {"logo": qr_png(), "tagline": "Made well."}, format="multipart")
+    public = APIClient().get("/api/v1/shop/").json()
+    assert public["logo"].endswith(".png") and public["tagline"] == "Made well." and public["story"]
+
 
 @pytest.mark.django_db
 def test_shop_settings_validation():

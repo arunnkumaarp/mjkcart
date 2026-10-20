@@ -14,7 +14,7 @@ from .models import ShopSettings
 class PublicShopSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShopSettings
-        fields = ["shop_name", "support_phone", "support_email", "upi_id", "upi_qr",
+        fields = ["shop_name", "logo", "tagline", "story", "support_phone", "support_email", "upi_id", "upi_qr",
                   "cod_enabled", "cod_fee", "cod_max_order", "shipping_flat", "free_shipping_above"]
 
 
@@ -36,6 +36,7 @@ class ShopSettingsSerializer(PublicShopSerializer):
     upi_id = serializers.RegexField(r"^([\w.\-]{2,}@[A-Za-z]{2,})?$", required=False, allow_blank=True,
                                     error_messages={"invalid": "Enter a UPI ID like shopname@okaxis."})
     upi_qr = serializers.ImageField(required=False, allow_null=True)
+    logo = serializers.ImageField(required=False, allow_null=True)
 
     class Meta(PublicShopSerializer.Meta):
         pass
@@ -49,9 +50,10 @@ class ShopSettingsSerializer(PublicShopSerializer):
         return attrs
 
     def update(self, shop, validated_data):
-        # Sending upi_qr empty removes the QR image.
-        if "upi_qr" in validated_data and not validated_data["upi_qr"] and shop.upi_qr:
-            shop.upi_qr.delete(save=False)
+        # Sending an image field empty removes that image.
+        for field in ("upi_qr", "logo"):
+            if field in validated_data and not validated_data[field] and getattr(shop, field):
+                getattr(shop, field).delete(save=False)
         return super().update(shop, validated_data)
 
 
@@ -59,8 +61,8 @@ class ShopSettingsSerializer(PublicShopSerializer):
 @extend_schema(methods=["PATCH"], request={"application/json": ShopSettingsSerializer,
                                            "multipart/form-data": ShopSettingsSerializer},
                responses=ShopSettingsSerializer,
-               description="Admins edit the shop's name, contacts, UPI, COD and delivery fees. "
-                           "Upload upi_qr as multipart form data; send it empty to remove it.")
+               description="Admins edit the shop's name, logo, tagline, story, contacts, UPI, COD and delivery fees. "
+                           "Upload logo or upi_qr as multipart form data; send one empty to remove it.")
 @api_view(["GET", "PATCH"])
 @permission_classes([IsAdminRole])
 @parser_classes([JSONParser, MultiPartParser, FormParser])

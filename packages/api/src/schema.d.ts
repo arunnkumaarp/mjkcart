@@ -688,7 +688,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** @description Admins edit the shop's name, contacts, UPI, COD and delivery fees. Upload upi_qr as multipart form data; send it empty to remove it. */
+        /** @description Admins edit the shop's name, logo, tagline, story, contacts, UPI, COD and delivery fees. Upload logo or upi_qr as multipart form data; send one empty to remove it. */
         patch: operations["v1_staff_shop_partial_update"];
         trace?: never;
     };
@@ -1190,6 +1190,10 @@ export interface components {
         };
         PatchedShopSettingsRequest: {
             shop_name?: string;
+            /** Format: binary */
+            logo?: string | null;
+            tagline?: string;
+            story?: string;
             support_phone?: string;
             /** Format: email */
             support_email?: string;
@@ -1283,6 +1287,10 @@ export interface components {
         };
         PublicShop: {
             shop_name?: string;
+            /** Format: uri */
+            logo?: string;
+            tagline?: string;
+            story?: string;
             support_phone?: string;
             /** Format: email */
             support_email?: string;
@@ -1319,6 +1327,10 @@ export interface components {
         };
         ShopSettings: {
             shop_name?: string;
+            /** Format: uri */
+            logo?: string | null;
+            tagline?: string;
+            story?: string;
             support_phone?: string;
             /** Format: email */
             support_email?: string;

@@ -7,6 +7,14 @@ class ShopSettings(models.Model):
     """The one row of shop-wide settings the admin edits: name, payments and shipping."""
 
     shop_name = models.CharField(max_length=80, default="MJK Cart")
+    # Brand, shown on the storefront. Admins upload their own logo; without one the name is set as a wordmark.
+    logo = models.ImageField(upload_to="shop/", blank=True)
+    tagline = models.CharField(max_length=120, blank=True, default="Good things, packed with care.")
+    story = models.TextField(blank=True, default=(
+        "MJK began at a kitchen table with one idea: the things you use every day should be made well, "
+        "priced fairly and arrive like a gift from someone who cares. We choose every product ourselves, "
+        "pack every order by hand and answer every message. We would rather sell fewer things we believe "
+        "in than a thousand we don't."))
     support_phone = models.CharField(max_length=15, blank=True, default="")
     support_email = models.EmailField(blank=True, default="")
 
