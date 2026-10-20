@@ -1,7 +1,12 @@
-from rest_framework import serializers
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+from decimal import Decimal
+
 from drf_spectacular.utils import extend_schema
+from rest_framework import serializers
+from rest_framework.decorators import api_view, parser_classes, permission_classes
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.response import Response
+
+from accounts.permissions import IsAdminRole
 
 from .models import ShopSettings
 
@@ -23,3 +28,46 @@ def shop(request):
 @api_view(["GET"])
 def health(request):
     return Response({"status": "ok"})
+
+
+class ShopSettingsSerializer(PublicShopSerializer):
+    support_phone = serializers.RegexField(r"^([6-9]\d{9})?$", required=False, allow_blank=True,
+                                           error_messages={"invalid": "Enter a 10-digit mobile number."})
+    upi_id = serializers.RegexField(r"^([\w.\-]{2,}@[A-Za-z]{2,})?$", required=False, allow_blank=True,
+                                    error_messages={"invalid": "Enter a UPI ID like shopname@okaxis."})
+    upi_qr = serializers.ImageField(required=False, allow_null=True)
+
+    class Meta(PublicShopSerializer.Meta):
+        pass
+
+    def validate(self, attrs):
+        for field in ["cod_fee", "shipping_flat", "free_shipping_above"]:
+            if attrs.get(field, Decimal("0")) < 0:
+                raise serializers.ValidationError({field: "Can't be negative."})
+        if "cod_max_order" in attrs and attrs["cod_max_order"] <= 0:
+            raise serializers.ValidationError({"cod_max_order": "Must be more than zero."})
+        return attrs
+
+    def update(self, shop, validated_data):
+        # Sending upi_qr empty removes the QR image.
+        if "upi_qr" in validated_data and not validated_data["upi_qr"] and shop.upi_qr:
+            shop.upi_qr.delete(save=False)
+        return super().update(shop, validated_data)
+
+
+@extend_schema(methods=["GET"], responses=ShopSettingsSerializer)
+@extend_schema(methods=["PATCH"], request={"application/json": ShopSettingsSerializer,
+                                           "multipart/form-data": ShopSettingsSerializer},
+               responses=ShopSettingsSerializer,
+               description="Admins edit the shop's name, contacts, UPI, COD and delivery fees. "
+                           "Upload upi_qr as multipart form data; send it empty to remove it.")
+@api_view(["GET", "PATCH"])
+@permission_classes([IsAdminRole])
+@parser_classes([JSONParser, MultiPartParser, FormParser])
+def shop_settings(request):
+    shop = ShopSettings.load()
+    if request.method == "PATCH":
+        s = ShopSettingsSerializer(shop, data=request.data, partial=True, context={"request": request})
+        s.is_valid(raise_exception=True)
+        s.save()
+    return Response(ShopSettingsSerializer(shop, context={"request": request}).data)

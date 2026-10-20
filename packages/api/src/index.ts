@@ -20,6 +20,7 @@ export type ReportDay = components["schemas"]["Day"];
 export type TopProduct = components["schemas"]["TopProduct"];
 export type LowStock = components["schemas"]["LowStock"];
 export type TeamMember = components["schemas"]["Member"];
+export type ShopSettings = components["schemas"]["ShopSettings"];
 export type Quote = components["schemas"]["Quote"];
 export type User = components["schemas"]["User"];
 export type Address = components["schemas"]["Address"];

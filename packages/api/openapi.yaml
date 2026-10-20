@@ -1758,6 +1758,43 @@ paths:
                 items:
                   $ref: '#/components/schemas/TopProduct'
           description: ''
+  /api/v1/staff/shop/:
+    get:
+      operationId: v1_staff_shop_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopSettings'
+          description: ''
+    patch:
+      operationId: v1_staff_shop_partial_update
+      description: Admins edit the shop's name, contacts, UPI, COD and delivery fees.
+        Upload upi_qr as multipart form data; send it empty to remove it.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedShopSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedShopSettingsRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopSettings'
+          description: ''
   /api/v1/staff/team/:
     get:
       operationId: v1_staff_team_list
@@ -3087,6 +3124,45 @@ components:
         quantity:
           type: integer
           minimum: 1
+    PatchedShopSettingsRequest:
+      type: object
+      properties:
+        shop_name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        support_phone:
+          type: string
+          pattern: ^([6-9]\d{9})?$
+        support_email:
+          type: string
+          format: email
+          maxLength: 254
+        upi_id:
+          type: string
+          pattern: ^([\w.\-]{2,}@[A-Za-z]{2,})?$
+        upi_qr:
+          type: string
+          format: binary
+          nullable: true
+        cod_enabled:
+          type: boolean
+        cod_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        cod_max_order:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        shipping_flat:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        free_shipping_above:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
     PatchedUserRequest:
       type: object
       properties:
@@ -3358,6 +3434,44 @@ components:
           maxLength: 200
       required:
       - reason
+    ShopSettings:
+      type: object
+      properties:
+        shop_name:
+          type: string
+          maxLength: 80
+        support_phone:
+          type: string
+          pattern: ^([6-9]\d{9})?$
+        support_email:
+          type: string
+          format: email
+          maxLength: 254
+        upi_id:
+          type: string
+          pattern: ^([\w.\-]{2,}@[A-Za-z]{2,})?$
+        upi_qr:
+          type: string
+          format: uri
+          nullable: true
+        cod_enabled:
+          type: boolean
+        cod_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        cod_max_order:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        shipping_flat:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        free_shipping_above:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
     StaffOrder:
       type: object
       properties:

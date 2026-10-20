@@ -675,6 +675,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/shop/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_staff_shop_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Admins edit the shop's name, contacts, UPI, COD and delivery fees. Upload upi_qr as multipart form data; send it empty to remove it. */
+        patch: operations["v1_staff_shop_partial_update"];
+        trace?: never;
+    };
     "/api/v1/staff/team/": {
         parameters: {
             query?: never;
@@ -1171,6 +1188,24 @@ export interface components {
         PatchedQuantityRequest: {
             quantity?: number;
         };
+        PatchedShopSettingsRequest: {
+            shop_name?: string;
+            support_phone?: string;
+            /** Format: email */
+            support_email?: string;
+            upi_id?: string;
+            /** Format: binary */
+            upi_qr?: string | null;
+            cod_enabled?: boolean;
+            /** Format: decimal */
+            cod_fee?: string;
+            /** Format: decimal */
+            cod_max_order?: string;
+            /** Format: decimal */
+            shipping_flat?: string;
+            /** Format: decimal */
+            free_shipping_above?: string;
+        };
         PatchedUserRequest: {
             first_name?: string;
             phone?: string;
@@ -1281,6 +1316,24 @@ export interface components {
         };
         RejectRequest: {
             reason: string;
+        };
+        ShopSettings: {
+            shop_name?: string;
+            support_phone?: string;
+            /** Format: email */
+            support_email?: string;
+            upi_id?: string;
+            /** Format: uri */
+            upi_qr?: string | null;
+            cod_enabled?: boolean;
+            /** Format: decimal */
+            cod_fee?: string;
+            /** Format: decimal */
+            cod_max_order?: string;
+            /** Format: decimal */
+            shipping_flat?: string;
+            /** Format: decimal */
+            free_shipping_above?: string;
         };
         StaffOrder: {
             number?: string;
@@ -3032,6 +3085,49 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TopProduct"][];
+                };
+            };
+        };
+    };
+    v1_staff_shop_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopSettings"];
+                };
+            };
+        };
+    };
+    v1_staff_shop_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedShopSettingsRequest"];
+                "multipart/form-data": components["schemas"]["PatchedShopSettingsRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShopSettings"];
                 };
             };
         };
