@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from accounts.permissions import IsStaffRole
 from accounts.views import DetailSerializer
 
+from .emails import notify
 from .models import Order, PaymentProof
 from .status import change_status
 from .views import OrderSerializer, my_orders
@@ -54,6 +55,7 @@ def submit_payment(request, number):
     s = PaymentProofSerializer(data=request.data)
     s.is_valid(raise_exception=True)
     s.save(order=order)
+    notify(order, "payment_submitted")
     return Response(OrderSerializer(my_orders(request).get(pk=order.pk), context={"request": request}).data,
                     status=status.HTTP_201_CREATED)
 
@@ -100,6 +102,7 @@ class StaffPaymentViewSet(viewsets.ReadOnlyModelViewSet):
                 change_status(proof.order, Order.Status.CONFIRMED, request.user, note)
             else:
                 proof.order.events.create(status=proof.order.status, note=note, by=request.user)
+                notify(proof.order, "payment_rejected", reason)
         return Response(self.get_serializer(proof).data)
 
     @extend_schema(request=None, responses={200: StaffPaymentSerializer, 400: DetailSerializer},

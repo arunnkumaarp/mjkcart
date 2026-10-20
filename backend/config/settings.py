@@ -141,6 +141,8 @@ EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.conso
 if not EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "MJK Cart <no-reply@localhost>")
+# The storefront address, for "view your order" links in emails. Empty leaves the links out.
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "")
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),

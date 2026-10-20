@@ -3,6 +3,7 @@ from django.db.models import F
 
 from catalog.models import Variant
 
+from .emails import CUSTOMER_STATUSES, notify
 from .models import Order
 
 S = Order.Status
@@ -39,4 +40,6 @@ def change_status(order, status, by, note=""):
     order.status = status
     order.save(update_fields=["status", "updated_at"])
     order.events.create(status=status, note=note, by=by)
+    if status in CUSTOMER_STATUSES:
+        notify(order, status, note)
     return order

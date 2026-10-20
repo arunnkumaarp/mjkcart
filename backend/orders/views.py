@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from accounts.views import DetailSerializer
 from catalog.models import Variant
 
+from .emails import notify
 from .models import Cart, CartItem, Order, OrderEvent, OrderItem
 from .pricing import quote
 from .status import CUSTOMER_CANCELLABLE, StatusError, change_status
@@ -294,6 +295,7 @@ def orders(request):
         for i in q["items"]:
             Variant.objects.filter(pk=i.variant_id).update(stock=F("stock") - i.quantity)
         order.events.create(status=order.status, by=request.user)
+        notify(order, "placed")
         cart.items.all().delete()
     return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
