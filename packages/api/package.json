@@ -1,0 +1,22 @@
+{
+  "name": "@mjkcart/api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Typed client for the MJK Cart API, shared by the Angular and React Native apps.",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "schema": "cd ../.. && docker compose run --rm -T backend python manage.py spectacular --validate --fail-on-warn --file /app/openapi.tmp.yaml && mv backend/openapi.tmp.yaml packages/api/openapi.yaml",
+    "generate": "openapi-typescript openapi.yaml -o src/schema.d.ts",
+    "build": "npm run schema && npm run generate",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.13.8"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3"
+  }
+}
