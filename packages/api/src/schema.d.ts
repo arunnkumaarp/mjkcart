@@ -56,6 +56,73 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cart/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_cart_retrieve"];
+        put?: never;
+        post?: never;
+        /** @description Empty the cart. */
+        delete: operations["v1_cart_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cart/items/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Add a variant; adding one already in the cart increases its quantity. */
+        post: operations["v1_cart_items_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cart/items/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["v1_cart_items_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["v1_cart_items_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/cart/merge/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description After login, send the cart kept on the device. Quantities are added and capped at stock; items that can't be bought are skipped. */
+        post: operations["v1_cart_merge_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/categories/": {
         parameters: {
             query?: never;
@@ -292,6 +359,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AddItemRequest: {
+            variant: number;
+            /** @default 1 */
+            quantity: number;
+        };
         Address: {
             readonly id: number;
             name: string;
@@ -314,6 +386,30 @@ export interface components {
             state: string;
             pincode: string;
             is_default?: boolean;
+        };
+        Cart: {
+            readonly items: components["schemas"]["CartItem"][];
+            readonly item_count: number;
+            readonly subtotal: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        CartItem: {
+            readonly id: number;
+            variant: number;
+            quantity: number;
+            readonly product_name: string;
+            readonly product_slug: string;
+            readonly label: string;
+            /** Format: decimal */
+            readonly price: string;
+            /** Format: decimal */
+            readonly mrp: string | null;
+            readonly image: string | null;
+            readonly stock: number;
+            readonly available: boolean;
+            /** Format: decimal */
+            readonly line_total: string;
         };
         Category: {
             readonly id: number;
@@ -340,6 +436,9 @@ export interface components {
             access: string;
             refresh: string;
             user: components["schemas"]["User"];
+        };
+        MergeRequest: {
+            items: components["schemas"]["AddItemRequest"][];
         };
         PaginatedProductImageList: {
             /** @example 123 */
@@ -415,6 +514,9 @@ export interface components {
             description?: string;
             category?: number | null;
             is_active?: boolean;
+        };
+        PatchedQuantityRequest: {
+            quantity?: number;
         };
         PatchedUserRequest: {
             first_name?: string;
@@ -630,6 +732,140 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TokenRefresh"];
+                };
+            };
+        };
+    };
+    v1_cart_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cart"];
+                };
+            };
+        };
+    };
+    v1_cart_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_cart_items_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddItemRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["AddItemRequest"];
+                "multipart/form-data": components["schemas"]["AddItemRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cart"];
+                };
+            };
+        };
+    };
+    v1_cart_items_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_cart_items_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedQuantityRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedQuantityRequest"];
+                "multipart/form-data": components["schemas"]["PatchedQuantityRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cart"];
+                };
+            };
+        };
+    };
+    v1_cart_merge_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["MergeRequest"];
+                "multipart/form-data": components["schemas"]["MergeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cart"];
                 };
             };
         };

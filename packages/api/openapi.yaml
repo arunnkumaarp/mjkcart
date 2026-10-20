@@ -84,6 +84,131 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenRefresh'
           description: ''
+  /api/v1/cart/:
+    get:
+      operationId: v1_cart_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+    delete:
+      operationId: v1_cart_destroy
+      description: Empty the cart.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/cart/items/:
+    post:
+      operationId: v1_cart_items_create
+      description: Add a variant; adding one already in the cart increases its quantity.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddItemRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+  /api/v1/cart/items/{id}/:
+    patch:
+      operationId: v1_cart_items_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedQuantityRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedQuantityRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedQuantityRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+    delete:
+      operationId: v1_cart_items_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/cart/merge/:
+    post:
+      operationId: v1_cart_merge_create
+      description: After login, send the cart kept on the device. Quantities are added
+        and capped at stock; items that can't be bought are skipped.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MergeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MergeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
   /api/v1/categories/:
     get:
       operationId: v1_categories_list
@@ -998,6 +1123,17 @@ paths:
           description: No response body
 components:
   schemas:
+    AddItemRequest:
+      type: object
+      properties:
+        variant:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+      required:
+      - variant
     Address:
       type: object
       properties:
@@ -1080,6 +1216,89 @@ components:
       - phone
       - pincode
       - state
+    Cart:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+          readOnly: true
+        item_count:
+          type: integer
+          readOnly: true
+        subtotal:
+          type: string
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - item_count
+      - items
+      - subtotal
+      - updated_at
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        variant:
+          type: integer
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        product_name:
+          type: string
+          readOnly: true
+        product_slug:
+          type: string
+          readOnly: true
+        label:
+          type: string
+          readOnly: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        mrp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        image:
+          type: string
+          nullable: true
+          readOnly: true
+        stock:
+          type: integer
+          readOnly: true
+        available:
+          type: boolean
+          readOnly: true
+        line_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+      required:
+      - available
+      - id
+      - image
+      - label
+      - line_total
+      - mrp
+      - price
+      - product_name
+      - product_slug
+      - quantity
+      - stock
+      - variant
     Category:
       type: object
       properties:
@@ -1153,6 +1372,15 @@ components:
       - access
       - refresh
       - user
+    MergeRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddItemRequest'
+      required:
+      - items
     PaginatedProductImageList:
       type: object
       required:
@@ -1302,6 +1530,12 @@ components:
           nullable: true
         is_active:
           type: boolean
+    PatchedQuantityRequest:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
     PatchedUserRequest:
       type: object
       properties:
