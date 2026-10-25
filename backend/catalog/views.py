@@ -113,7 +113,8 @@ class ProductViewSet(StaffWritesMixin, viewsets.ModelViewSet):
             in_stock=Exists(Variant.objects.filter(product=OuterRef("pk"), is_active=True, stock__gt=0)),
         ).prefetch_related(Prefetch("variants", queryset=variants), "images")
         if not staff:
-            products = products.filter(is_active=True, price_from__isnull=False)
+            # A hidden shelf hides everything on it, so a shop can switch what it sells by hiding shelves.
+            products = products.filter(is_active=True, price_from__isnull=False).exclude(category__is_active=False)
         return products
 
 

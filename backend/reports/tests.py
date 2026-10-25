@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from accounts.models import User
-from catalog.models import Product, Variant
+from catalog.models import Category, Product, Variant
 from orders.models import Order, OrderItem, PaymentProof
 
 S = Order.Status
@@ -103,3 +103,83 @@ def test_money_reports_are_admin_only(db, ravi):
     customer = APIClient()
     customer.force_authenticate(ravi)
     assert customer.get("/api/v1/staff/reports/low-stock/").status_code == 403
+
+
+def test_sales_by_category(admin, ravi):
+    rings = Category.objects.create(name="Rings")
+    tea = Category.objects.create(name="Tea")
+    ring = Variant.objects.create(product=Product.objects.create(name="Gold ring", category=rings), price="2000", stock=9)
+    chai = Variant.objects.create(product=Product.objects.create(name="Chai", category=tea), price="180", stock=9)
+    loose = Variant.objects.create(product=Product.objects.create(name="Loose"), price="50", stock=9)
+
+    def sell(status, *lines):
+        o = order(ravi, status, items=())
+        for variant, qty in lines:
+            OrderItem.objects.create(order=o, variant=variant, product_name=variant.product.name,
+                                     price=variant.price, quantity=qty)
+
+    sell(S.CONFIRMED, (ring, 1), (chai, 2))
+    sell(S.DELIVERED, (chai, 3), (loose, 1))
+    sell(S.CANCELLED, (ring, 5))  # not a sale
+    rows = admin.get("/api/v1/staff/reports/categories/").json()
+    assert rows == [
+        {"category": "Rings", "orders": 1, "quantity": 1, "revenue": "2000.00"},
+        {"category": "Tea", "orders": 2, "quantity": 5, "revenue": "900.00"},
+        {"category": "No shelf", "orders": 1, "quantity": 1, "revenue": "50.00"},
+    ]
+
+
+def test_sales_by_product_lists_every_product(admin, ravi):
+    rings = Category.objects.create(name="Rings", is_active=False)
+    tea = Category.objects.create(name="Tea")
+    ring = Variant.objects.create(product=Product.objects.create(name="Gold ring", category=rings), price="2000", stock=4)
+    chai = Product.objects.create(name="Chai", category=tea)
+    small = Variant.objects.create(product=chai, size="100g", price="100", stock=5)
+    Variant.objects.create(product=chai, size="250g", price="180", stock=7)
+    Variant.objects.create(product=chai, size="1kg", price="600", stock=50, is_active=False)  # not on sale
+    Product.objects.create(name="Biscuits", category=tea, is_active=False)                    # never sold
+
+    def sell(status, *lines):
+        o = order(ravi, status, items=())
+        for variant, qty in lines:
+            OrderItem.objects.create(order=o, variant=variant, product_name=variant.product.name,
+                                     price=variant.price, quantity=qty)
+
+    sell(S.CONFIRMED, (small, 2))
+    sell(S.DELIVERED, (small, 1))
+    sell(S.CANCELLED, (ring, 5))  # not a sale
+    rows = admin.get("/api/v1/staff/reports/products/").json()
+    assert [(r["name"], r["category"], r["shown"], r["stock"], r["orders"], r["quantity"], r["revenue"])
+            for r in rows] == [
+        ("Chai", "Tea", True, 12, 2, 3, "300.00"),
+        ("Biscuits", "Tea", False, 0, 0, 0, "0.00"),
+        ("Gold ring", "Rings", False, 4, 0, 0, "0.00"),
+    ]
+
+
+def test_buyers_list_ranks_by_spend_and_searches(admin, ravi):
+    meena = User.objects.create(username="meena@x.com", email="meena@x.com", first_name="Meena", phone="9876500000")
+    User.objects.create(username="new@x.com", email="new@x.com")  # signed up, never ordered
+    order(ravi, S.DELIVERED)                    # 459
+    order(meena, S.CONFIRMED)                   # 459
+    order(meena, S.SHIPPED, shipping="0")       # 360
+    order(meena, S.CANCELLED)                   # not counted
+    order(ravi, S.PAYMENT_PENDING, "upi")       # waiting
+
+    rows = admin.get("/api/v1/staff/reports/buyers/").json()["results"]
+    assert [(r["email"], r["orders"], r["spent"], r["waiting_payment"]) for r in rows] == [
+        ("meena@x.com", 2, "819.00", 0), ("ravi@x.com", 1, "459.00", 1), ("new@x.com", 0, "0.00", 0)]
+    assert rows[0]["name"] == "Meena" and rows[2]["last_order"] is None
+    # Admins don't appear as buyers.
+    assert "o@x.com" not in [r["email"] for r in rows]
+    for q in ("meena", "98765", "MEENA@X"):
+        assert [r["email"] for r in admin.get(f"/api/v1/staff/reports/buyers/?q={q}").json()["results"]] == ["meena@x.com"]
+
+
+def test_buyers_and_categories_are_admin_only(ravi):
+    staff = APIClient()
+    staff.force_authenticate(User.objects.create(username="s@x.com", email="s@x.com", role=User.Role.STAFF))
+    for url in ("/api/v1/staff/reports/buyers/", "/api/v1/staff/reports/categories/",
+                "/api/v1/staff/reports/products/"):
+        assert staff.get(url).status_code == 403
+        assert APIClient().get(url).status_code == 401

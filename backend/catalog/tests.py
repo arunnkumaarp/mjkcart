@@ -89,6 +89,22 @@ def test_category_filter_includes_sub_categories(admin):
     assert res.status_code == 400
 
 
+def test_hiding_a_category_hides_its_products_from_customers(admin):
+    rings = admin.post("/api/v1/categories/", {"name": "Rings"}, format="json").json()
+    add_product(admin, "Gold ring", rings["id"])
+    add_product(admin, "Loose item")  # on no shelf: stays visible
+
+    public = APIClient()
+    assert {p["name"] for p in results(public.get("/api/v1/products/"))} == {"Gold ring", "Loose item"}
+    assert admin.delete("/api/v1/categories/rings/").status_code == 204
+    assert [p["name"] for p in results(public.get("/api/v1/products/"))] == ["Loose item"]
+    assert public.get("/api/v1/products/gold-ring/").status_code == 404
+    # Staff still see it, to bring the shelf back.
+    assert len(results(admin.get("/api/v1/products/"))) == 2
+    admin.patch("/api/v1/categories/rings/", {"is_active": True}, format="json")
+    assert len(results(public.get("/api/v1/products/"))) == 2
+
+
 def test_price_stock_search_and_sort(admin):
     add_product(admin, "Masala Tea", variants=[{"price": "180.00", "stock": 5, "sku": "TEA-250"}])
     add_product(admin, "Filter Coffee", variants=[{"price": "420.00", "stock": 0}])

@@ -116,6 +116,8 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "core.pagination.Pagination",
+    # Password login is rate-limited per IP so passwords can't be guessed at speed.
+    "DEFAULT_THROTTLE_RATES": {"password-login": "10/min", "signup": "20/hour"},
 }
 
 # The Angular and React Native clients are generated from this schema (packages/api).

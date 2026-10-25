@@ -3,6 +3,33 @@ info:
   title: MJK Cart API
   version: 1.0.0
 paths:
+  /api/v1/auth/login/:
+    post:
+      operationId: v1_auth_login_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordLoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordLoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordLoginRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordLoginResponse'
+          description: ''
   /api/v1/auth/otp/send/:
     post:
       operationId: v1_auth_otp_send_create
@@ -83,6 +110,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/auth/signup/:
+    post:
+      operationId: v1_auth_signup_create
+      description: A buyer makes their own account with name, email, mobile and password,
+        and is logged straight in.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordLoginResponse'
           description: ''
   /api/v1/cart/:
     get:
@@ -595,6 +651,32 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/me/password/:
+    post:
+      operationId: v1_me_password_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
   /api/v1/orders/:
     get:
       operationId: v1_orders_list
@@ -1487,6 +1569,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Detail'
           description: ''
+  /api/v1/staff/orders/counts/:
+    get:
+      operationId: v1_staff_orders_counts_retrieve
+      description: How many orders are in each status, for the tabs on the orders
+        screen.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderCounts'
+          description: ''
   /api/v1/staff/orders/slips/:
     get:
       operationId: v1_staff_orders_slips_retrieve
@@ -1643,6 +1741,76 @@ paths:
               schema:
                 $ref: '#/components/schemas/Detail'
           description: ''
+  /api/v1/staff/reports/buyers/:
+    get:
+      operationId: v1_staff_reports_buyers_list
+      description: Every buyer account with what they've bought, all time. Biggest
+        spenders first.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search name, email or phone
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBuyerList'
+          description: ''
+  /api/v1/staff/reports/categories/:
+    get:
+      operationId: v1_staff_reports_categories_list
+      description: Sales per shelf (category), best-selling first.
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: 'Default: 29 days before date_to'
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: 'Default: today'
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategorySales'
+          description: ''
   /api/v1/staff/reports/daily/:
     get:
       operationId: v1_staff_reports_daily_list
@@ -1696,6 +1864,37 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/LowStock'
+          description: ''
+  /api/v1/staff/reports/products/:
+    get:
+      operationId: v1_staff_reports_products_list
+      description: Every product, sold or not, with its sales in the period. Best-selling
+        first, unsold ones last.
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: 'Default: 29 days before date_to'
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: 'Default: today'
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductSales'
           description: ''
   /api/v1/staff/reports/summary/:
     get:
@@ -2189,6 +2388,47 @@ components:
       - phone
       - pincode
       - state
+    Buyer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 15
+        joined:
+          type: string
+          format: date-time
+        orders:
+          type: integer
+          description: Orders that count as sales
+        spent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        last_order:
+          type: string
+          format: date-time
+          nullable: true
+        waiting_payment:
+          type: integer
+          description: UPI orders not paid yet
+      required:
+      - id
+      - joined
+      - last_order
+      - name
+      - orders
+      - spent
+      - waiting_payment
     CancelRequest:
       type: object
       properties:
@@ -2323,6 +2563,27 @@ components:
           type: boolean
       required:
       - name
+    CategorySales:
+      type: object
+      properties:
+        category:
+          type: string
+          description: Shelf name today; 'No shelf' when the product has none or is
+            gone
+        orders:
+          type: integer
+        quantity:
+          type: integer
+        revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          description: Item prices, before coupons
+      required:
+      - category
+      - orders
+      - quantity
+      - revenue
     CheckoutRequest:
       type: object
       properties:
@@ -2757,6 +3018,31 @@ components:
       - subtotal
       - total
       - tracking_url
+    OrderCounts:
+      type: object
+      properties:
+        payment_pending:
+          type: integer
+        confirmed:
+          type: integer
+        packed:
+          type: integer
+        shipped:
+          type: integer
+        delivered:
+          type: integer
+        cancelled:
+          type: integer
+        returned:
+          type: integer
+      required:
+      - cancelled
+      - confirmed
+      - delivered
+      - packed
+      - payment_pending
+      - returned
+      - shipped
     OrderEvent:
       type: object
       properties:
@@ -2848,6 +3134,29 @@ components:
         * `delivered` - Delivered
         * `cancelled` - Cancelled
         * `returned` - Returned
+    PaginatedBuyerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Buyer'
     PaginatedCouponList:
       type: object
       required:
@@ -2986,6 +3295,33 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Variant'
+    PasswordLoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+      - username
+    PasswordLoginResponse:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+      - access
+      - refresh
+      - user
     PatchedAddressRequest:
       type: object
       properties:
@@ -3361,6 +3697,40 @@ components:
           type: boolean
       required:
       - name
+    ProductSales:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category:
+          type: string
+          description: Shelf name today; 'No shelf' when it has none
+        shown:
+          type: boolean
+          description: 'Buyers can see it: the product and its shelf are both shown'
+        stock:
+          type: integer
+          description: Units in stock now, across its options
+        orders:
+          type: integer
+        quantity:
+          type: integer
+        revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          description: Item prices, before coupons
+      required:
+      - category
+      - id
+      - name
+      - orders
+      - quantity
+      - revenue
+      - shown
+      - stock
     PublicShop:
       type: object
       properties:
@@ -3452,6 +3822,15 @@ components:
           maxLength: 200
       required:
       - reason
+    SetPasswordRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+      required:
+      - password
     ShopSettings:
       type: object
       properties:
@@ -3499,6 +3878,30 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+    SignupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+        phone:
+          type: string
+          minLength: 1
+          pattern: ^[6-9]\d{9}$
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+      required:
+      - email
+      - name
+      - password
+      - phone
     StaffOrder:
       type: object
       properties:
@@ -3695,6 +4098,10 @@ components:
           type: string
           default: ''
           maxLength: 40
+        courier_name:
+          type: string
+          default: ''
+          maxLength: 60
       required:
       - status
     Summary:

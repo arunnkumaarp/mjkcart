@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/v1/auth/login/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_auth_login_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/otp/send/": {
         parameters: {
             query?: never;
@@ -50,6 +66,23 @@ export interface paths {
          *     token if the refresh token is valid.
          */
         post: operations["v1_auth_refresh_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/signup/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A buyer makes their own account with name, email, mobile and password, and is logged straight in. */
+        post: operations["v1_auth_signup_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -240,6 +273,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["v1_me_addresses_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/me/password/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_me_password_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/orders/": {
@@ -524,6 +573,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/orders/counts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description How many orders are in each status, for the tabs on the orders screen. */
+        get: operations["v1_staff_orders_counts_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/orders/slips/": {
         parameters: {
             query?: never;
@@ -609,6 +675,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/staff/reports/buyers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every buyer account with what they've bought, all time. Biggest spenders first. */
+        get: operations["v1_staff_reports_buyers_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/reports/categories/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Sales per shelf (category), best-selling first. */
+        get: operations["v1_staff_reports_categories_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/staff/reports/daily/": {
         parameters: {
             query?: never;
@@ -635,6 +735,23 @@ export interface paths {
         };
         /** @description Variants still on sale that are running out, emptiest first. */
         get: operations["v1_staff_reports_low_stock_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/reports/products/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every product, sold or not, with its sales in the period. Best-selling first, unsold ones last. */
+        get: operations["v1_staff_reports_products_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -799,6 +916,26 @@ export interface components {
             pincode: string;
             is_default?: boolean;
         };
+        Buyer: {
+            readonly id: number;
+            name: string;
+            /**
+             * Email address
+             * Format: email
+             */
+            email?: string;
+            phone?: string;
+            /** Format: date-time */
+            joined: string;
+            /** @description Orders that count as sales */
+            orders: number;
+            /** Format: decimal */
+            spent: string;
+            /** Format: date-time */
+            last_order: string | null;
+            /** @description UPI orders not paid yet */
+            waiting_payment: number;
+        };
         CancelRequest: {
             /** @default  */
             reason: string;
@@ -840,6 +977,17 @@ export interface components {
             parent?: number | null;
             sort_order?: number;
             is_active?: boolean;
+        };
+        CategorySales: {
+            /** @description Shelf name today; 'No shelf' when the product has none or is gone */
+            category: string;
+            orders: number;
+            quantity: number;
+            /**
+             * Format: decimal
+             * @description Item prices, before coupons
+             */
+            revenue: string;
         };
         CheckoutRequest: {
             address: number;
@@ -1007,6 +1155,15 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
         };
+        OrderCounts: {
+            payment_pending: number;
+            confirmed: number;
+            packed: number;
+            shipped: number;
+            delivered: number;
+            cancelled: number;
+            returned: number;
+        };
         OrderEvent: {
             status: components["schemas"]["OrderStatusEnum"];
             readonly status_label: string;
@@ -1043,6 +1200,21 @@ export interface components {
          * @enum {string}
          */
         OrderStatusEnum: "payment_pending" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled" | "returned";
+        PaginatedBuyerList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Buyer"][];
+        };
         PaginatedCouponList: {
             /** @example 123 */
             count: number;
@@ -1132,6 +1304,15 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Variant"][];
+        };
+        PasswordLoginRequest: {
+            username: string;
+            password: string;
+        };
+        PasswordLoginResponse: {
+            access: string;
+            refresh: string;
+            user: components["schemas"]["User"];
         };
         PatchedAddressRequest: {
             name?: string;
@@ -1285,6 +1466,23 @@ export interface components {
             category?: number | null;
             is_active?: boolean;
         };
+        ProductSales: {
+            id: number;
+            name: string;
+            /** @description Shelf name today; 'No shelf' when it has none */
+            category: string;
+            /** @description Buyers can see it: the product and its shelf are both shown */
+            shown: boolean;
+            /** @description Units in stock now, across its options */
+            stock: number;
+            orders: number;
+            quantity: number;
+            /**
+             * Format: decimal
+             * @description Item prices, before coupons
+             */
+            revenue: string;
+        };
         PublicShop: {
             shop_name?: string;
             /** Format: uri */
@@ -1325,6 +1523,9 @@ export interface components {
         RejectRequest: {
             reason: string;
         };
+        SetPasswordRequest: {
+            password: string;
+        };
         ShopSettings: {
             shop_name?: string;
             /** Format: uri */
@@ -1346,6 +1547,13 @@ export interface components {
             shipping_flat?: string;
             /** Format: decimal */
             free_shipping_above?: string;
+        };
+        SignupRequest: {
+            name: string;
+            /** Format: email */
+            email: string;
+            phone: string;
+            password: string;
         };
         StaffOrder: {
             number?: string;
@@ -1411,6 +1619,8 @@ export interface components {
             courier?: number | null;
             /** @default  */
             tracking_number: string;
+            /** @default  */
+            courier_name: string;
         };
         Summary: {
             /** Format: date */
@@ -1514,6 +1724,31 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    v1_auth_login_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordLoginRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PasswordLoginRequest"];
+                "multipart/form-data": components["schemas"]["PasswordLoginRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordLoginResponse"];
+                };
+            };
+        };
+    };
     v1_auth_otp_send_create: {
         parameters: {
             query?: never;
@@ -1585,6 +1820,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TokenRefresh"];
+                };
+            };
+        };
+    };
+    v1_auth_signup_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SignupRequest"];
+                "multipart/form-data": components["schemas"]["SignupRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordLoginResponse"];
                 };
             };
         };
@@ -2097,6 +2357,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Address"];
+                };
+            };
+        };
+    };
+    v1_me_password_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPasswordRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SetPasswordRequest"];
+                "multipart/form-data": components["schemas"]["SetPasswordRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Detail"];
                 };
             };
         };
@@ -2865,6 +3150,25 @@ export interface operations {
             };
         };
     };
+    v1_staff_orders_counts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderCounts"];
+                };
+            };
+        };
+    };
     v1_staff_orders_slips_retrieve: {
         parameters: {
             query: {
@@ -3005,6 +3309,58 @@ export interface operations {
             };
         };
     };
+    v1_staff_reports_buyers_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description Search name, email or phone */
+                q?: string;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedBuyerList"];
+                };
+            };
+        };
+    };
+    v1_staff_reports_categories_list: {
+        parameters: {
+            query?: {
+                /** @description Default: 29 days before date_to */
+                date_from?: string;
+                /** @description Default: today */
+                date_to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorySales"][];
+                };
+            };
+        };
+    };
     v1_staff_reports_daily_list: {
         parameters: {
             query?: {
@@ -3047,6 +3403,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LowStock"][];
+                };
+            };
+        };
+    };
+    v1_staff_reports_products_list: {
+        parameters: {
+            query?: {
+                /** @description Default: 29 days before date_to */
+                date_from?: string;
+                /** @description Default: today */
+                date_to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductSales"][];
                 };
             };
         };

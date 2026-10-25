@@ -106,3 +106,29 @@ def test_customers_cannot_use_staff_order_endpoints(setup):
     number = place(customer, address, tea)["number"]
     assert customer.get("/api/v1/staff/orders/").status_code == 403
     assert move(customer, number, "packed").status_code == 403
+
+
+def test_counts_per_status(setup):
+    customer, staff, address, tea = setup
+    first = place(customer, address, tea, quantity=1)["number"]
+    place(customer, address, tea, quantity=1)
+    move(staff, first, "packed")
+    counts = staff.get("/api/v1/staff/orders/counts/").json()
+    assert counts["confirmed"] == 1 and counts["packed"] == 1 and counts["shipped"] == 0
+    assert set(counts) == {"payment_pending", "confirmed", "packed", "shipped", "delivered", "cancelled", "returned"}
+    assert customer.get("/api/v1/staff/orders/counts/").status_code == 403
+
+
+def test_ship_with_a_typed_courier_name(setup):
+    customer, staff, address, tea = setup
+    number = place(customer, address, tea)["number"]
+    move(staff, number, "packed")
+    res = staff.post(f"/api/v1/staff/orders/{number}/status/",
+                     {"status": "shipped", "courier_name": " India Post ", "tracking_number": "EE123IN"}, format="json")
+    assert res.status_code == 200 and res.json()["courier_name"] == "India Post"
+    # The same name again reuses that courier, whatever the case.
+    other = place(customer, address, tea, quantity=1)["number"]
+    move(staff, other, "packed")
+    staff.post(f"/api/v1/staff/orders/{other}/status/",
+               {"status": "shipped", "courier_name": "india post", "tracking_number": "EE124IN"}, format="json")
+    assert Courier.objects.filter(name__iexact="india post").count() == 1

@@ -1,8 +1,9 @@
 import django_filters
+from django.db.models import Count
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import filters, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -35,6 +36,18 @@ class StatusChangeSerializer(serializers.Serializer):
     courier = serializers.PrimaryKeyRelatedField(queryset=Courier.objects.filter(is_active=True), required=False,
                                                  allow_null=True, default=None)
     tracking_number = serializers.CharField(max_length=40, required=False, allow_blank=True, default="")
+    # Or type the courier's name; a courier the shop hasn't used before is added to the list.
+    courier_name = serializers.CharField(max_length=60, required=False, allow_blank=True, default="")
+
+    def validate(self, attrs):
+        name = attrs.pop("courier_name").strip()
+        if name and not attrs["courier"]:
+            attrs["courier"] = (Courier.objects.filter(name__iexact=name).first()
+                                or Courier.objects.create(name=name))
+            if not attrs["courier"].is_active:
+                attrs["courier"].is_active = True
+                attrs["courier"].save(update_fields=["is_active"])
+        return attrs
 
 
 class CourierSerializer(serializers.ModelSerializer):
@@ -88,6 +101,13 @@ class StaffOrderViewSet(viewsets.ReadOnlyModelViewSet):
         except StatusError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(self.get_serializer(self.get_queryset().get(number=number)).data)
+
+    @extend_schema(responses=inline_serializer("OrderCounts", {s: serializers.IntegerField() for s in Order.Status.values}))
+    @action(detail=False, methods=["get"])
+    def counts(self, request):
+        """How many orders are in each status, for the tabs on the orders screen."""
+        counts = dict(Order.objects.values_list("status").annotate(n=Count("id")).order_by())
+        return Response({s: counts.get(s, 0) for s in Order.Status.values})
 
     @extend_schema(parameters=[OpenApiParameter("numbers", str, required=True,
                                                 description="Comma-separated order numbers, e.g. MJK000001,MJK000002")],

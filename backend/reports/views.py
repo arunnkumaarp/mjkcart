@@ -1,16 +1,18 @@
 from datetime import timedelta
 
-from django.db.models import Count, F, Sum
+from django.db.models import Count, DecimalField, F, Max, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import serializers
+from rest_framework import generics, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from accounts.models import User
 from accounts.permissions import IsAdminRole, IsStaffRole
-from catalog.models import Variant
+from catalog.models import Product, Variant
 from orders.models import Order, OrderItem, PaymentProof
 
 S = Order.Status
@@ -168,3 +170,95 @@ def low_stock(request):
     variants = (Variant.objects.filter(is_active=True, product__is_active=True, stock__lte=threshold)
                 .select_related("product").order_by("stock", "product__name"))
     return Response(LowStockSerializer(variants, many=True).data)
+
+
+class CategorySalesSerializer(serializers.Serializer):
+    category = serializers.CharField(help_text="Shelf name today; 'No shelf' when the product has none or is gone")
+    orders = serializers.IntegerField()
+    quantity = serializers.IntegerField()
+    revenue = serializers.DecimalField(max_digits=14, decimal_places=2, help_text="Item prices, before coupons")
+
+
+@extend_schema(parameters=PERIOD, responses=CategorySalesSerializer(many=True))
+@api_view(["GET"])
+@permission_classes([IsAdminRole])
+def categories(request):
+    """Sales per shelf (category), best-selling first."""
+    start, end = period(request)
+    rows = (OrderItem.objects.filter(order__in=sold_orders(start, end))
+            .values(name=F("variant__product__category__name"))
+            .annotate(orders=Count("order", distinct=True), sold=Sum("quantity"),
+                      revenue=Sum(F("price") * F("quantity")))
+            .order_by("-revenue", "name"))
+    return Response([{"category": r["name"] or "No shelf", "orders": r["orders"], "quantity": r["sold"],
+                      "revenue": money(r["revenue"])} for r in rows])
+
+
+class ProductSalesSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    category = serializers.CharField(help_text="Shelf name today; 'No shelf' when it has none")
+    shown = serializers.BooleanField(help_text="Buyers can see it: the product and its shelf are both shown")
+    stock = serializers.IntegerField(help_text="Units in stock now, across its options")
+    orders = serializers.IntegerField()
+    quantity = serializers.IntegerField()
+    revenue = serializers.DecimalField(max_digits=14, decimal_places=2, help_text="Item prices, before coupons")
+
+
+@extend_schema(parameters=PERIOD, responses=ProductSalesSerializer(many=True))
+@api_view(["GET"])
+@permission_classes([IsAdminRole])
+def products(request):
+    """Every product, sold or not, with its sales in the period. Best-selling first, unsold ones last."""
+    start, end = period(request)
+    sales = {r["pid"]: r for r in (OrderItem.objects.filter(order__in=sold_orders(start, end))
+                                   .values(pid=F("variant__product_id"))
+                                   .annotate(orders=Count("order", distinct=True), sold=Sum("quantity"),
+                                             revenue=Sum(F("price") * F("quantity"))))}
+    rows = []
+    for p in (Product.objects.select_related("category")
+              .annotate(stock=Coalesce(Sum("variants__stock", filter=Q(variants__is_active=True)), 0))):
+        s = sales.get(p.id, {})
+        rows.append({"id": p.id, "name": p.name, "category": p.category.name if p.category else "No shelf",
+                     "shown": p.is_active and (p.category is None or p.category.is_active), "stock": p.stock,
+                     "orders": s.get("orders", 0), "quantity": s.get("sold", 0),
+                     "revenue": s.get("revenue") or 0})
+    rows.sort(key=lambda r: (-r["revenue"], -r["quantity"], r["name"].lower()))
+    for r in rows:
+        r["revenue"] = money(r["revenue"])
+    return Response(rows)
+
+
+class BuyerSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="first_name")
+    joined = serializers.DateTimeField(source="date_joined")
+    orders = serializers.IntegerField(source="sold_orders", help_text="Orders that count as sales")
+    spent = serializers.DecimalField(max_digits=14, decimal_places=2)
+    last_order = serializers.DateTimeField(allow_null=True)
+    waiting_payment = serializers.IntegerField(help_text="UPI orders not paid yet")
+
+    class Meta:
+        model = User
+        fields = ["id", "name", "email", "phone", "joined", "orders", "spent", "last_order", "waiting_payment"]
+
+
+@extend_schema(parameters=[OpenApiParameter("q", str, description="Search name, email or phone")])
+class BuyersView(generics.ListAPIView):
+    """Every buyer account with what they've bought, all time. Biggest spenders first."""
+
+    serializer_class = BuyerSerializer
+    permission_classes = [IsAdminRole]
+
+    def get_queryset(self):
+        sold = Q(orders__status__in=SOLD)
+        buyers = (User.objects.filter(role=User.Role.CUSTOMER, is_superuser=False)
+                  .annotate(sold_orders=Count("orders", filter=sold),
+                            spent=Coalesce(Sum("orders__total", filter=sold), Value(0),
+                                           output_field=DecimalField(max_digits=14, decimal_places=2)),
+                            last_order=Max("orders__created_at"),
+                            waiting_payment=Count("orders", filter=Q(orders__status=S.PAYMENT_PENDING)))
+                  .order_by("-spent", "-date_joined"))
+        q = self.request.query_params.get("q", "").strip()
+        if q:
+            buyers = buyers.filter(Q(email__icontains=q) | Q(first_name__icontains=q) | Q(phone__icontains=q))
+        return buyers

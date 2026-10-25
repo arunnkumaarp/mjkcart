@@ -87,3 +87,68 @@ def test_address_rejects_bad_phone_and_pincode(client):
     res = client.post("/api/v1/me/addresses/", {**ADDRESS, "phone": "12345", "pincode": "0600"}, format="json")
     assert res.status_code == 400
     assert set(res.json()) == {"phone", "pincode"}
+
+
+@pytest.fixture
+def fresh_throttle():
+    from django.core.cache import cache
+    cache.clear()
+
+
+def test_password_login_by_username_or_email(client, fresh_throttle):
+    User.objects.create_superuser("mjkadmin", "Owner@Example.com", "s3cret-pass")
+    for name in ("mjkadmin", "MJKADMIN", "owner@example.com"):
+        res = client.post("/api/v1/auth/login/", {"username": name, "password": "s3cret-pass"}, format="json")
+        assert res.status_code == 200, res.json()
+        assert res.json()["user"]["role"] == "admin"
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.json()['access']}")
+    assert client.get("/api/v1/me/").json()["email"].lower() == "owner@example.com"
+
+
+def test_password_login_rejects_wrong_password_and_codeonly_accounts(client, fresh_throttle):
+    User.objects.create_user("ravi", "ravi@example.com", "right-pass")
+    User.objects.create(username="meena@example.com", email="meena@example.com")  # made by the email code, no password
+    for name, pw in (("ravi", "wrong-pass"), ("nobody", "right-pass"), ("meena@example.com", "")):
+        res = client.post("/api/v1/auth/login/", {"username": name, "password": pw or "anything"}, format="json")
+        assert res.status_code == 400
+        assert res.json()["detail"] == "Wrong username or password."
+
+
+def test_password_login_is_rate_limited(client, fresh_throttle):
+    for _ in range(10):
+        client.post("/api/v1/auth/login/", {"username": "x", "password": "y"}, format="json")
+    assert client.post("/api/v1/auth/login/", {"username": "x", "password": "y"}, format="json").status_code == 429
+
+
+def test_signed_up_buyer_sets_password_then_logs_in_with_it(client, fresh_throttle):
+    login(client)
+    assert client.post("/api/v1/me/password/", {"password": "short"}, format="json").status_code == 400
+    assert client.post("/api/v1/me/password/", {"password": "chennai-2026"}, format="json").status_code == 200
+    client.credentials()
+    assert client.post("/api/v1/me/password/", {"password": "chennai-2026"}, format="json").status_code == 401
+    res = client.post("/api/v1/auth/login/", {"username": "ravi@example.com", "password": "chennai-2026"}, format="json")
+    assert res.status_code == 200 and res.json()["user"]["role"] == "customer"
+
+
+NEW = {"name": "Meena", "email": "Meena@Example.com", "phone": "9876543210", "password": "jasmine-2026"}
+
+
+def test_signup_then_log_in_with_the_same_details(client, fresh_throttle):
+    res = client.post("/api/v1/auth/signup/", NEW, format="json")
+    assert res.status_code == 201, res.json()
+    assert res.json()["access"] and res.json()["user"]["role"] == "customer"
+    user = User.objects.get(email="meena@example.com")
+    assert (user.first_name, user.phone, user.username) == ("Meena", "9876543210", "meena@example.com")
+    login = client.post("/api/v1/auth/login/", {"username": "meena@example.com", "password": "jasmine-2026"},
+                        format="json")
+    assert login.status_code == 200
+
+
+def test_signup_refuses_a_taken_email_and_bad_details(client, fresh_throttle):
+    client.post("/api/v1/auth/signup/", NEW, format="json")
+    again = client.post("/api/v1/auth/signup/", NEW | {"email": "MEENA@example.com"}, format="json")
+    assert again.status_code == 400 and "already an account" in again.json()["email"][0]
+    for bad, field in (({"phone": "12345"}, "phone"), ({"password": "short"}, "password"), ({"name": "  "}, "name")):
+        res = client.post("/api/v1/auth/signup/", NEW | {"email": "x@example.com"} | bad, format="json")
+        assert res.status_code == 400 and field in res.json(), (bad, res.json())
+    assert not User.objects.filter(email="x@example.com").exists()

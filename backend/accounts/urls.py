@@ -11,6 +11,9 @@ router.register("staff/team", team.TeamViewSet, basename="team")
 urlpatterns = [
     path("auth/otp/send/", views.send_otp, name="otp-send"),
     path("auth/otp/verify/", views.verify_otp, name="otp-verify"),
+    path("auth/login/", views.password_login, name="password-login"),
+    path("auth/signup/", views.signup, name="signup"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
     path("me/", views.me, name="me"),
+    path("me/password/", views.set_password, name="set-password"),
 ] + router.urls
