@@ -2,6 +2,7 @@
 :root {
   --bg: #ff7a1f;          /* the orange ground */
   --surface: #ff8633;     /* one step off the ground */
+  --surface-soft: #ffb27a; /* back folder band */
   --ink: #050f16;         /* blue-black type */
   --muted: #5a2306;       /* soft ink on orange */
   --accent: #050f16;      /* the action: a solid block of ink */
@@ -80,4 +81,9 @@ h1, h2, h3 { font-weight: 600; letter-spacing: -0.04em; line-height: 0.92; text-
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .button, .button:hover { transition: none; transform: none; }
+}
+
+/* Room under the page for the phone tab bar, so it never covers the last button. */
+@media (max-width: 719px) {
+  body:has(mjk-top-bar) { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
 }

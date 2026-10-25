@@ -1,0 +1,71 @@
+<main class="login">
+  <p class="login__mark arrive">{{ shop()?.shop_name ?? 'MJK Cart' }}</p>
+
+  <section class="slip arrive" style="--i: 1" aria-labelledby="signup-title">
+    <div class="slip__main">
+      <p class="slip__from">From {{ shop()?.shop_name ?? 'MJK Cart' }}, packed by hand</p>
+      <h1 id="signup-title">Create your account</h1>
+
+      <form (submit)="create($event)" novalidate>
+        <label for="signup-name">Your name</label>
+        <input
+          id="signup-name"
+          type="text"
+          name="name"
+          autocomplete="name"
+          [value]="name()"
+          (input)="name.set($any($event.target).value)"
+          aria-describedby="signup-error"
+        />
+        <label for="signup-email">Email</label>
+        <input
+          id="signup-email"
+          type="email"
+          name="email"
+          autocomplete="email"
+          inputmode="email"
+          spellcheck="false"
+          placeholder="you@example.com"
+          [value]="email()"
+          (input)="email.set($any($event.target).value)"
+          aria-describedby="signup-error"
+        />
+        <label for="signup-phone">Mobile number</label>
+        <input
+          id="signup-phone"
+          class="num"
+          type="tel"
+          name="phone"
+          autocomplete="tel-national"
+          inputmode="numeric"
+          maxlength="10"
+          placeholder="9876543210"
+          [value]="phone()"
+          (input)="onPhone($any($event.target).value); $any($event.target).value = phone()"
+          aria-describedby="signup-error"
+        />
+        <label for="signup-password">Password</label>
+        <div class="password">
+          <input
+            id="signup-password"
+            [type]="showPassword() ? 'text' : 'password'"
+            name="password"
+            autocomplete="new-password"
+            minlength="8"
+            [value]="password()"
+            (input)="password.set($any($event.target).value)"
+            aria-describedby="signup-password-hint signup-error"
+          />
+          <button type="button" class="link password__toggle" (click)="showPassword.set(!showPassword())" [attr.aria-pressed]="showPassword()">
+            {{ showPassword() ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+        <p id="signup-password-hint" class="slip__note">At least 8 characters. Log in with your email and this password.</p>
+        <button class="button" type="submit" [disabled]="busy()">{{ busy() ? 'Creating your account…' : 'Create account' }}</button>
+      </form>
+
+      <p id="signup-error" class="slip__error" role="alert">{{ error() }}</p>
+      <p class="slip__switch">Already have an account? <a routerLink="/">Log in</a></p>
+    </div>
+  </section>
+</main>

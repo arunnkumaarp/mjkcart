@@ -1,0 +1,184 @@
+<mjk-top-bar />
+
+<main class="page">
+  <h1>Checkout</h1>
+
+  @if (cart.data() && !cart.items().length) {
+    <section class="field state">
+      <p>Your cart is empty, so there’s nothing to check out.</p>
+      <a class="button" routerLink="/shop">Go to the shop</a>
+    </section>
+  } @else {
+    <div class="layout">
+      <div class="steps">
+        <section class="field" aria-labelledby="where-title">
+          <h2 id="where-title"><span class="num">1</span> Where should it go?</h2>
+          @if (loading()) {
+            <p class="hint" role="status">Fetching your addresses…</p>
+          } @else if (failed()) {
+            <div role="alert">
+              <p class="hint">We couldn’t load your addresses.</p>
+              <button type="button" class="button" (click)="load()">Try again</button>
+            </div>
+          } @else {
+            @if (addresses().length) {
+              <div class="choices" role="radiogroup" aria-label="Delivery address">
+                @for (a of addresses(); track a.id) {
+                  <label class="choice" [class.is-on]="chosen() === a.id">
+                    <input type="radio" name="address" [checked]="chosen() === a.id" (change)="choose(a.id)" />
+                    <span>
+                      <strong>{{ a.name }}</strong> · <span class="num">{{ a.phone }}</span><br />
+                      {{ a.line1 }}{{ a.line2 ? ', ' + a.line2 : '' }}{{ a.landmark ? ', near ' + a.landmark : '' }}<br />
+                      {{ a.city }}, {{ a.state }} <span class="num">{{ a.pincode }}</span>
+                    </span>
+                  </label>
+                }
+              </div>
+            }
+            @if (adding()) {
+              <form class="address" (submit)="saveAddress($event)" novalidate>
+                <div class="pair">
+                  <div>
+                    <label for="a-name">Name</label>
+                    <input id="a-name" autocomplete="name" [value]="form().name" (input)="setField('name', $any($event.target).value)" />
+                  </div>
+                  <div>
+                    <label for="a-phone">Mobile number</label>
+                    <input
+                      id="a-phone"
+                      class="num"
+                      type="tel"
+                      inputmode="numeric"
+                      autocomplete="tel-national"
+                      maxlength="10"
+                      [value]="form().phone"
+                      (input)="$any($event.target).value = setField('phone', $any($event.target).value)"
+                    />
+                  </div>
+                </div>
+                <label for="a-line1">House number and street</label>
+                <input id="a-line1" autocomplete="address-line1" [value]="form().line1" (input)="setField('line1', $any($event.target).value)" />
+                <div class="pair">
+                  <div>
+                    <label for="a-line2">Area (optional)</label>
+                    <input id="a-line2" autocomplete="address-line2" [value]="form().line2" (input)="setField('line2', $any($event.target).value)" />
+                  </div>
+                  <div>
+                    <label for="a-landmark">Landmark (optional)</label>
+                    <input id="a-landmark" [value]="form().landmark" (input)="setField('landmark', $any($event.target).value)" />
+                  </div>
+                </div>
+                <div class="trio">
+                  <div>
+                    <label for="a-city">City</label>
+                    <input id="a-city" autocomplete="address-level2" [value]="form().city" (input)="setField('city', $any($event.target).value)" />
+                  </div>
+                  <div>
+                    <label for="a-state">State</label>
+                    <input id="a-state" autocomplete="address-level1" [value]="form().state" (input)="setField('state', $any($event.target).value)" />
+                  </div>
+                  <div>
+                    <label for="a-pin">Pincode</label>
+                    <input
+                      id="a-pin"
+                      class="num"
+                      inputmode="numeric"
+                      autocomplete="postal-code"
+                      maxlength="6"
+                      [value]="form().pincode"
+                      (input)="$any($event.target).value = setField('pincode', $any($event.target).value)"
+                    />
+                  </div>
+                </div>
+                <div class="actions">
+                  <button class="button" type="submit" [disabled]="savingAddress()">
+                    {{ savingAddress() ? 'Saving…' : 'Save address' }}
+                  </button>
+                  @if (addresses().length) {
+                    <button type="button" class="link" (click)="adding.set(false)">Cancel</button>
+                  }
+                </div>
+                <p class="error" role="alert">{{ addressError() }}</p>
+              </form>
+            } @else {
+              <button type="button" class="link" (click)="adding.set(true)">Add a new address</button>
+            }
+          }
+        </section>
+
+        <section class="field" aria-labelledby="pay-title">
+          <h2 id="pay-title"><span class="num">2</span> How will you pay?</h2>
+          <div class="choices" role="radiogroup" aria-label="Payment">
+            <label class="choice" [class.is-on]="method() === 'upi'">
+              <input type="radio" name="pay" [checked]="method() === 'upi'" (change)="pay('upi')" />
+              <span>
+                <strong>UPI</strong> (GPay, PhonePe, Paytm, any bank app)<br />
+                After you place the order we show the shop’s QR code and the exact amount. A person checks each payment
+                before packing.
+              </span>
+            </label>
+            @if (codAllowed()) {
+              <label class="choice" [class.is-on]="method() === 'cod'">
+                <input type="radio" name="pay" [checked]="method() === 'cod'" (change)="pay('cod')" />
+                <span>
+                  <strong>Cash on delivery</strong><br />
+                  Pay the courier when it arrives. Fee {{ money(shop()?.cod_fee) }}, for orders up to
+                  {{ money(shop()?.cod_max_order) }}.
+                </span>
+              </label>
+            }
+          </div>
+        </section>
+      </div>
+
+      <aside class="field summary" aria-labelledby="sum-title">
+        <h2 id="sum-title">Your order</h2>
+        <ul class="items" role="list">
+          @for (item of cart.items(); track item.id) {
+            <li>
+              <span>{{ item.product_name }} <span class="num">× {{ item.quantity }}</span></span>
+              <span class="num">{{ money(+item.price * item.quantity) }}</span>
+            </li>
+          }
+        </ul>
+        @if (quote(); as q) {
+          <dl class="totals">
+            <div><dt>Items</dt><dd class="num">{{ money(q.subtotal) }}</dd></div>
+            @if (+q.discount) {
+              <div><dt>Discount</dt><dd class="num">−{{ money(q.discount) }}</dd></div>
+            }
+            <div><dt>Delivery</dt><dd class="num">{{ +q.shipping_fee ? money(q.shipping_fee) : 'Free' }}</dd></div>
+            @if (+q.cod_fee) {
+              <div><dt>Cash on delivery fee</dt><dd class="num">{{ money(q.cod_fee) }}</dd></div>
+            }
+            <div class="total"><dt>To pay</dt><dd class="num">{{ money(q.total) }}</dd></div>
+          </dl>
+        } @else if (quoting()) {
+          <p class="hint" role="status">Working out the total…</p>
+        } @else {
+          <p class="hint">Pick an address to see the total with delivery.</p>
+        }
+
+        @if (problems().length) {
+          <ul class="problems" role="alert">
+            @for (p of problems(); track p) {
+              <li>{{ p }}</li>
+            }
+          </ul>
+        }
+        <p class="error" role="alert">{{ error() }}</p>
+
+        <button type="button" class="button place" (click)="place()" [disabled]="!canPlace()">
+          @if (placing()) {
+            Placing your order…
+          } @else if (method() === 'upi') {
+            Place order and pay by UPI
+          } @else {
+            Place order
+          }
+        </button>
+        <a class="link" routerLink="/cart">Back to cart</a>
+      </aside>
+    </div>
+  }
+</main>

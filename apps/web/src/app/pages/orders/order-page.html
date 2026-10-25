@@ -1,0 +1,202 @@
+<mjk-top-bar />
+
+<main class="page">
+  @if (loading() && !order()) {
+    <p class="state" role="status">Finding your order…</p>
+  } @else if (failed() || !order()) {
+    <div class="state field" role="alert">
+      <p>We couldn’t find that order.</p>
+      <a class="button" routerLink="/orders">See your orders</a>
+    </div>
+  } @else {
+    @let o = order()!;
+    <header class="head">
+      <p class="stamp num">{{ o.number }}</p>
+      <h1>
+        @if (needsPayment()) {
+          Pay {{ money(o.total) }} to finish
+        } @else if (checking()) {
+          We’re checking your payment
+        } @else {
+          {{ o.status_label }}
+        }
+      </h1>
+    </header>
+
+    <div class="layout">
+      @if (needsPayment()) {
+        <section class="field pay" aria-labelledby="pay-title">
+          <h2 id="pay-title">Scan and pay by UPI</h2>
+          @if (o.payment?.status === 'rejected') {
+            <p class="warn" role="alert">
+              We couldn’t find your last payment{{ o.payment.reject_reason ? ': ' + o.payment.reject_reason : '' }}.
+              Please check and send the reference again.
+            </p>
+          }
+          <div class="pay__grid">
+            <div class="qr">
+              @if (shop()?.upi_qr; as qr) {
+                <img [src]="qr" alt="The shop's UPI QR code" width="220" height="220" />
+              } @else {
+                <p class="hint">The QR code isn’t up yet. Pay to the UPI ID instead.</p>
+              }
+            </div>
+            <dl class="facts">
+              <div><dt>Amount</dt><dd class="num big">{{ money(o.total) }}</dd></div>
+              @if (shop()?.upi_id; as upi) {
+                <div><dt>UPI ID</dt><dd class="num">{{ upi }}</dd></div>
+              }
+              <div><dt>Write in the note</dt><dd class="num">{{ o.number }}</dd></div>
+            </dl>
+          </div>
+          @if (upiLink()) {
+            <a class="link" [href]="upiLink()">On your phone? Open your UPI app</a>
+          }
+
+          <form (submit)="sendProof($event)" novalidate>
+            <h3>After paying, tell us</h3>
+            <label for="utr">UPI reference number (UTR)</label>
+            <input
+              id="utr"
+              class="num"
+              inputmode="numeric"
+              autocomplete="off"
+              placeholder="12-digit number from your payment app"
+              [value]="reference()"
+              (input)="$any($event.target).value = onReference($any($event.target).value)"
+            />
+            <label for="shot">Or a screenshot of the payment</label>
+            <input id="shot" type="file" accept="image/*" (change)="onScreenshot($any($event.target))" />
+            <button class="button" type="submit" [disabled]="sending()">{{ sending() ? 'Sending…' : 'I’ve paid' }}</button>
+            <p class="error" role="alert">{{ error() }}</p>
+          </form>
+          <p class="hint">A person checks every payment against the shop’s account, usually within a few hours. We pack your order once it’s found.</p>
+          @if (o.can_cancel) {
+            @if (cancelOpen()) {
+              <div class="cancel" role="group" aria-labelledby="cancel-title">
+                <h3 id="cancel-title">Cancel this order?</h3>
+                <label for="cancel-why">Why? (optional, it helps the shop)</label>
+                <input id="cancel-why" type="text" maxlength="200" placeholder="Ordered by mistake" [value]="cancelReason()" (input)="cancelReason.set($any($event.target).value)" />
+                <div class="actions">
+                  <button type="button" class="button button--danger" (click)="cancel()" [disabled]="cancelling()">
+                    {{ cancelling() ? 'Cancelling…' : 'Yes, cancel the order' }}
+                  </button>
+                  <button type="button" class="link" (click)="cancelOpen.set(false)">No, keep it</button>
+                </div>
+                <p class="error" role="alert">{{ cancelError() }}</p>
+              </div>
+            } @else {
+              <button type="button" class="link" (click)="cancelOpen.set(true)">Cancel this order</button>
+            }
+          }
+        </section>
+      } @else if (checking()) {
+        <section class="field" aria-labelledby="check-title">
+          <h2 id="check-title">Payment received for checking</h2>
+          <p>
+            We got your payment details{{ o.payment?.reference ? ' (reference ' + o.payment.reference + ')' : '' }}.
+            A person is checking it against the shop’s account. We’ll confirm your order once it’s found.
+          </p>
+          <button type="button" class="link" (click)="load()">Check again</button>
+          @if (o.can_cancel) {
+            @if (cancelOpen()) {
+              <div class="cancel" role="group" aria-labelledby="cancel-title">
+                <h3 id="cancel-title">Cancel this order?</h3>
+                <label for="cancel-why">Why? (optional, it helps the shop)</label>
+                <input id="cancel-why" type="text" maxlength="200" placeholder="Ordered by mistake" [value]="cancelReason()" (input)="cancelReason.set($any($event.target).value)" />
+                <div class="actions">
+                  <button type="button" class="button button--danger" (click)="cancel()" [disabled]="cancelling()">
+                    {{ cancelling() ? 'Cancelling…' : 'Yes, cancel the order' }}
+                  </button>
+                  <button type="button" class="link" (click)="cancelOpen.set(false)">No, keep it</button>
+                </div>
+                <p class="error" role="alert">{{ cancelError() }}</p>
+              </div>
+            } @else {
+              <button type="button" class="link" (click)="cancelOpen.set(true)">Cancel this order</button>
+            }
+          }
+        </section>
+      } @else if (o.status !== 'cancelled') {
+        <section class="field" aria-labelledby="track-title">
+          <h2 id="track-title">Where it is</h2>
+          <ol class="track">
+            @for (s of steps; track s.status; let i = $index) {
+              <li [class.is-done]="i <= stepIndex()">
+                <span class="tick" aria-hidden="true">{{ i <= stepIndex() ? '✓' : '' }}</span>{{ s.label }}
+              </li>
+            }
+          </ol>
+          @if (o.tracking_number) {
+            <div class="parcel">
+              <p>Sent with <strong>{{ o.courier_name }}</strong></p>
+              <p>Tracking number <strong class="num">{{ o.tracking_number }}</strong>
+                <button type="button" class="link link--small" (click)="copy(o.tracking_number)">{{ copied() ? 'Copied' : 'Copy' }}</button>
+              </p>
+              @if (o.tracking_url) {
+                <a class="button" [href]="o.tracking_url" target="_blank" rel="noopener">Track your parcel</a>
+              } @else {
+                <p class="hint">Track it on the {{ o.courier_name }} website or app with this number.</p>
+              }
+            </div>
+          }
+          @if (o.payment_method === 'cod' && o.status !== 'delivered' && o.status !== 'returned') {
+            <p class="hint">Pay {{ money(o.total) }} in cash when the parcel arrives.</p>
+          }
+          @if (o.status === 'packed') {
+            <p class="hint">Your order is packed. Want to change it? Please contact the shop.</p>
+          }
+          @if (o.can_cancel) {
+            @if (cancelOpen()) {
+              <div class="cancel" role="group" aria-labelledby="cancel-title">
+                <h3 id="cancel-title">Cancel this order?</h3>
+                <label for="cancel-why">Why? (optional, it helps the shop)</label>
+                <input id="cancel-why" type="text" maxlength="200" placeholder="Ordered by mistake" [value]="cancelReason()" (input)="cancelReason.set($any($event.target).value)" />
+                <div class="actions">
+                  <button type="button" class="button button--danger" (click)="cancel()" [disabled]="cancelling()">
+                    {{ cancelling() ? 'Cancelling…' : 'Yes, cancel the order' }}
+                  </button>
+                  <button type="button" class="link" (click)="cancelOpen.set(false)">No, keep it</button>
+                </div>
+                <p class="error" role="alert">{{ cancelError() }}</p>
+              </div>
+            } @else {
+              <button type="button" class="link" (click)="cancelOpen.set(true)">Cancel this order</button>
+            }
+          }
+        </section>
+      } @else {
+        <section class="field" aria-labelledby="cancelled-title">
+          <h2 id="cancelled-title">This order is cancelled</h2>
+          <p>Nothing will be sent{{ o.payment_method === 'upi' && o.payment?.status === 'verified' ? ', and the shop will refund your UPI payment' : '' }}.</p>
+          <a class="button" routerLink="/shop">Back to the shop</a>
+        </section>
+      }
+
+      <aside class="field" aria-labelledby="items-title">
+        <h2 id="items-title">What’s in it</h2>
+        <ul class="items" role="list">
+          @for (item of o.items; track item.id) {
+            <li>
+              <span>{{ item.product_name }}{{ item.label ? ' (' + item.label + ')' : '' }} <span class="num">× {{ item.quantity }}</span></span>
+              <span class="num">{{ money(item.line_total) }}</span>
+            </li>
+          }
+        </ul>
+        <dl class="totals">
+          <div><dt>Items</dt><dd class="num">{{ money(o.subtotal) }}</dd></div>
+          <div><dt>Delivery</dt><dd class="num">{{ +o.shipping_fee ? money(o.shipping_fee) : 'Free' }}</dd></div>
+          @if (+o.cod_fee) {
+            <div><dt>Cash on delivery fee</dt><dd class="num">{{ money(o.cod_fee) }}</dd></div>
+          }
+          <div class="total"><dt>Total</dt><dd class="num">{{ money(o.total) }}</dd></div>
+        </dl>
+        <p class="hint">
+          To {{ o.ship_name }}, {{ o.ship_line1 }}, {{ o.ship_city }}
+          <span class="num">{{ o.ship_pincode }}</span>
+        </p>
+        <a class="link" routerLink="/orders">All your orders</a>
+      </aside>
+    </div>
+  }
+</main>

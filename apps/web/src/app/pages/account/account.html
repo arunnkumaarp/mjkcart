@@ -1,0 +1,39 @@
+<mjk-top-bar />
+
+<main class="page">
+  <header class="head">
+    <h1>Your account</h1>
+    <p>Logged in as <strong>{{ auth.user()?.email }}</strong></p>
+    <button type="button" class="button logout" (click)="logout()">Log out</button>
+  </header>
+
+  <div class="layout">
+    <section class="field" aria-labelledby="details-title">
+      <h2 id="details-title">Your details</h2>
+      <form (submit)="saveDetails($event)" novalidate>
+        <label for="acc-name">Name</label>
+        <input id="acc-name" autocomplete="name" [value]="name()" (input)="name.set($any($event.target).value)" />
+        <label for="acc-phone">Mobile number</label>
+        <input id="acc-phone" class="num" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="10" [value]="phone()" (input)="phone.set($any($event.target).value)" />
+        <button class="button" type="submit" [disabled]="savingDetails()">{{ savingDetails() ? 'Saving…' : 'Save details' }}</button>
+        <p class="note" role="status">{{ detailsNote() }}</p>
+        <p class="error" role="alert">{{ detailsError() }}</p>
+      </form>
+    </section>
+
+    <section class="field" aria-labelledby="pw-title">
+      <h2 id="pw-title">Password</h2>
+      <p class="hint">Forgot your password? Log in with a code sent to your email, then set a new one here.</p>
+      <form (submit)="savePassword($event)" novalidate>
+        <label for="acc-pw">New password</label>
+        <input id="acc-pw" [type]="show() ? 'text' : 'password'" autocomplete="new-password" [value]="password()" (input)="password.set($any($event.target).value)" />
+        <label for="acc-pw2">Type it again</label>
+        <input id="acc-pw2" [type]="show() ? 'text' : 'password'" autocomplete="new-password" [value]="again()" (input)="again.set($any($event.target).value)" />
+        <label class="check"><input type="checkbox" [checked]="show()" (change)="show.set($any($event.target).checked)" /> Show the passwords</label>
+        <button class="button" type="submit" [disabled]="savingPassword()">{{ savingPassword() ? 'Saving…' : 'Set new password' }}</button>
+        <p class="note" role="status">{{ passwordNote() }}</p>
+        <p class="error" role="alert">{{ passwordError() }}</p>
+      </form>
+    </section>
+  </div>
+</main>

@@ -1,0 +1,47 @@
+.login {
+  min-height: 100dvh;
+  display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; justify-items: center; gap: 40px;
+  padding: 48px var(--margin);
+}
+.login__mark { font-size: var(--step-head); font-weight: 600; letter-spacing: -0.04em; line-height: 0.92; }
+
+/* The shipping label: orange slip on white, a dotted perforation, the top-right corner cut. */
+.slip {
+  width: min(100%, 520px);
+  display: grid; grid-template-columns: minmax(0, 1fr);
+  background: var(--paper); color: var(--paper-ink);
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+}
+.slip__main { padding: clamp(24px, 4vw, 48px); display: grid; gap: 20px; align-content: start; }
+.slip__from { font-size: var(--step-small); color: var(--paper-muted); }
+h1 { font-size: var(--step-head); }
+
+form { display: grid; gap: 12px; }
+label { font-size: var(--step-small); font-weight: 600; }
+input {
+  width: 100%; min-height: 52px; padding: 8px 0;
+  border: 0; border-bottom: 3px solid var(--paper-ink); border-radius: 0;
+  background: transparent; font-size: var(--step-lead);
+}
+input::placeholder { color: var(--paper-muted); opacity: 0.6; }
+input:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+input[aria-invalid] { border-bottom-color: #b3261e; }
+.password { position: relative; }
+.password input { padding-right: 64px; }
+.password__toggle { position: absolute; right: 0; bottom: 4px; }
+.code { font-size: var(--step-head); font-weight: 600; letter-spacing: 0.12em; }
+form .button { margin-top: 12px; justify-self: start; }
+.button:disabled { opacity: 0.6; cursor: progress; transform: none; }
+
+.slip__note { font-size: var(--step-small); color: var(--paper-muted); }
+.slip__error { min-height: 1.5em; font-size: var(--step-small); font-weight: 500; color: #b3261e; }
+.slip__error:empty { min-height: 0; }
+.slip__links { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.link {
+  min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer;
+  font-size: var(--step-small); font-weight: 500; text-decoration: underline; text-underline-offset: 4px;
+}
+
+.slip__switch { font-size: var(--step-small); color: var(--paper-muted); }
+.slip__switch a { display: inline-block; min-height: 44px; line-height: 44px; color: var(--paper-ink); font-weight: 600; text-underline-offset: 4px; }
+

@@ -1,0 +1,246 @@
+<mjk-top-bar />
+
+<main class="desk">
+  <header class="desk__head">
+    <p class="stamp">{{ auth.user()?.role === 'admin' ? 'Admin' : 'Staff' }}</p>
+    <h1>Admin desk</h1>
+  </header>
+
+  <nav class="tabs" aria-label="Admin desk">
+    @for (t of tabs(); track t.key) {
+      @let n = badge(t.key);
+      <a
+        class="tab"
+        routerLink="."
+        [queryParams]="{ tab: t.key === 'orders' ? null : t.key }"
+        [class.is-here]="tab() === t.key"
+        [attr.aria-current]="tab() === t.key ? 'page' : null"
+      >
+        {{ t.label }}
+        @if (n) {
+          <span class="tab__n num" [attr.aria-label]="n + ' waiting'">{{ n }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  @switch (tab()) {
+    @case ('orders') {
+      <mjk-orders-desk (openPayments)="go('payments')" />
+    }
+
+    @case ('products') {
+      <section class="field" aria-labelledby="list-title">
+        <div class="field__head">
+          <h2 id="list-title">Products</h2>
+          @if (!adding()) {
+            <button type="button" class="button" (click)="openAdd()">+ Add a product</button>
+          }
+        </div>
+
+        @if (adding()) {
+          <form class="add" #formEl (submit)="add($event, formEl)" novalidate aria-labelledby="add-title">
+            <div class="field__head">
+              <h3 id="add-title">Add a product</h3>
+              <button type="button" class="link" (click)="adding.set(false)">Close</button>
+            </div>
+            <div class="pair">
+              <div>
+                <label for="p-name">Name</label>
+                <input id="p-name" type="text" [value]="form().name" (input)="set('name', $any($event.target).value)" />
+              </div>
+              <div>
+                <label for="p-shelf">Shelf</label>
+                <select id="p-shelf" (change)="set('category', $any($event.target).value ? +$any($event.target).value : null)">
+                  <option value="" [selected]="!form().category">Pick a shelf</option>
+                  @for (shelf of catalog.shelves(); track shelf.id) {
+                    <option [value]="shelf.id" [selected]="form().category === shelf.id">
+                      {{ shelf.name }}{{ shelf.is_active ? '' : ' (hidden)' }}
+                    </option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <label for="p-desc">Description</label>
+            <textarea id="p-desc" rows="2" [value]="form().description" (input)="set('description', $any($event.target).value)"></textarea>
+
+            <div class="trio">
+              <div>
+                <label for="p-price">Price (₹)</label>
+                <input id="p-price" class="num" type="number" min="1" step="0.01" inputmode="decimal" [value]="form().price" (input)="set('price', $any($event.target).value)" />
+              </div>
+              <div>
+                <label for="p-mrp">MRP (₹, optional)</label>
+                <input id="p-mrp" class="num" type="number" min="1" step="0.01" inputmode="decimal" [value]="form().mrp" (input)="set('mrp', $any($event.target).value)" />
+              </div>
+              <div>
+                <label for="p-stock">Stock</label>
+                <input id="p-stock" class="num" type="number" min="0" step="1" inputmode="numeric" [value]="form().stock" (input)="set('stock', $any($event.target).value)" />
+              </div>
+            </div>
+
+            <label for="p-photo">Photo (optional)</label>
+            <input id="p-photo" type="file" accept="image/*" (change)="onPhoto($any($event.target))" />
+
+            <label class="check">
+              <input type="checkbox" [checked]="form().show" (change)="set('show', $any($event.target).checked)" />
+              Show to buyers straight away
+            </label>
+
+            <button class="button" type="submit" [disabled]="saving()">{{ saving() ? 'Adding…' : 'Add product' }}</button>
+            <p class="note" role="status">{{ formNote() }}</p>
+            <p class="error" role="alert">{{ formError() }}</p>
+          </form>
+        }
+
+        <div class="tools">
+          <label for="p-q" class="visually-hidden">Search products</label>
+          <input id="p-q" type="search" placeholder="Search products" [value]="query()" (input)="query.set($any($event.target).value)" />
+          @if (catalog.shelves().length) {
+            <label for="p-filter" class="visually-hidden">Shelf</label>
+            <select id="p-filter" (change)="onFilter($any($event.target).value)">
+              <option value="">Every shelf</option>
+              @for (shelf of catalog.shelves(); track shelf.id) {
+                <option [value]="shelf.id" [selected]="filter() === shelf.id">{{ shelf.name }}</option>
+              }
+            </select>
+          }
+        </div>
+        @if (!catalog.loading() && !catalog.failed()) {
+          <p class="hint num">{{ shownCount() }} of {{ listed().length }} shown to buyers</p>
+        }
+        <p class="note" role="status">{{ listNote() }}</p>
+        <p class="error" role="alert">{{ listError() }}</p>
+
+        @if (catalog.loading() && !catalog.products().length) {
+          <p class="state" role="status">Fetching the products…</p>
+        } @else if (catalog.failed()) {
+          <div class="state" role="alert">
+            <p>We couldn’t load the products just now.</p>
+            <button type="button" class="button" (click)="catalog.load()">Try again</button>
+          </div>
+        } @else if (!listed().length) {
+          <p class="state">{{ query().trim() ? 'No product matches that.' : 'No products here yet. Press “Add a product”.' }}</p>
+        } @else {
+          <ul class="rows" role="list">
+            @for (product of listed(); track product.id) {
+              @let left = stock(product);
+              <li class="row" [class.row--hidden]="!visible(product)">
+                <div class="row__picture">
+                  @if (product.images[0]; as image) {
+                    <img [src]="image.image" alt="" />
+                  } @else {
+                    <span aria-hidden="true">{{ product.name.charAt(0) }}</span>
+                  }
+                </div>
+                <div class="row__about">
+                  <h3>{{ product.name }}</h3>
+                  <p class="num">
+                    {{ catalog.shelfName(product.category) }} ·
+                    {{ product.price_from ? money(product.price_from) : 'No price yet' }} · {{ left }} in stock
+                    @if (left === 0) {
+                      <span class="tag tag--out">Out of stock</span>
+                    } @else if (left <= lowStock) {
+                      <span class="tag">Low stock</span>
+                    }
+                  </p>
+                  @if (product.is_active && !shelfShown(product)) {
+                    <p class="row__warn">
+                      Buyers can’t see it: the {{ catalog.shelfName(product.category) }} shelf is hidden.
+                      <button type="button" class="link link--inline" (click)="showShelf(product)">Show that shelf</button>
+                    </p>
+                  }
+                  @if (editing() !== product.id) {
+                    <button type="button" class="link" (click)="edit(product)" [attr.aria-label]="'Edit ' + product.name">Edit</button>
+                  }
+                </div>
+                <button
+                  type="button"
+                  class="switch"
+                  role="switch"
+                  [attr.aria-checked]="product.is_active"
+                  [attr.aria-label]="'Show ' + product.name + ' to buyers'"
+                  [disabled]="catalog.toggling() === 'product:' + product.id"
+                  (click)="toggle(product)"
+                >
+                  <span class="switch__track" aria-hidden="true"><span class="switch__knob"></span></span>
+                  <span class="switch__text">{{ seen(product) }}</span>
+                </button>
+
+                @if (editing() === product.id) {
+                  <form class="editor" (submit)="saveEdit($event, product)" novalidate>
+                    <div class="pair">
+                      <div>
+                        <label [for]="'e-name-' + product.id">Name</label>
+                        <input [id]="'e-name-' + product.id" type="text" [value]="details().name" (input)="setDetail('name', $any($event.target).value)" />
+                      </div>
+                      <div>
+                        <label [for]="'e-shelf-' + product.id">Shelf</label>
+                        <select [id]="'e-shelf-' + product.id" (change)="setDetail('category', +$any($event.target).value || null)">
+                          @for (shelf of catalog.shelves(); track shelf.id) {
+                            <option [value]="shelf.id" [selected]="details().category === shelf.id">{{ shelf.name }}{{ shelf.is_active ? '' : ' (hidden)' }}</option>
+                          }
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label [for]="'e-desc-' + product.id">Description</label>
+                      <textarea [id]="'e-desc-' + product.id" rows="2" [value]="details().description" (input)="setDetail('description', $any($event.target).value)"></textarea>
+                    </div>
+                    @for (v of product.variants; track v.id) {
+                      @let d = drafts()[v.id];
+                      <fieldset class="editor__option">
+                        <legend [class.visually-hidden]="product.variants.length === 1">
+                          {{ v.label || 'Option ' + ($index + 1) }}{{ v.is_active ? '' : ' (removed)' }}
+                        </legend>
+                        <div>
+                          <label [for]="'e-price-' + v.id">Price (₹)</label>
+                          <input [id]="'e-price-' + v.id" class="num" type="number" min="1" step="0.01" inputmode="decimal" [value]="d.price" (input)="setDraft(v.id, 'price', $any($event.target).value)" />
+                        </div>
+                        <div>
+                          <label [for]="'e-mrp-' + v.id">MRP (₹)</label>
+                          <input [id]="'e-mrp-' + v.id" class="num" type="number" min="1" step="0.01" inputmode="decimal" placeholder="None" [value]="d.mrp" (input)="setDraft(v.id, 'mrp', $any($event.target).value)" />
+                        </div>
+                        <div>
+                          <label [for]="'e-stock-' + v.id">Stock</label>
+                          <input [id]="'e-stock-' + v.id" class="num" type="number" min="0" step="1" inputmode="numeric" [value]="d.stock" (input)="setDraft(v.id, 'stock', $any($event.target).value)" />
+                        </div>
+                      </fieldset>
+                    }
+                    <div>
+                      <label [for]="'e-photo-' + product.id">{{ product.images.length ? 'New photo (replaces the old one)' : 'Photo' }}</label>
+                      <input [id]="'e-photo-' + product.id" type="file" accept="image/*" (change)="editPhoto.set($any($event.target).files?.[0] ?? null)" />
+                    </div>
+                    <div class="editor__actions">
+                      <button class="button" type="submit" [disabled]="savingEdit()">{{ savingEdit() ? 'Saving…' : 'Save' }}</button>
+                      <button type="button" class="link" (click)="cancelEdit()">Cancel</button>
+                    </div>
+                    <p class="error" role="alert">{{ editError() }}</p>
+                  </form>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+
+    @case ('shelves') {
+      <div class="one"><mjk-shelves /></div>
+    }
+
+    @case ('payments') {
+      <div class="desk__grid">
+        <mjk-payments-review />
+        @if (auth.user()?.role === 'admin') {
+          <mjk-payment-settings />
+        }
+      </div>
+    }
+
+    @case ('settings') {
+      <div class="one"><mjk-shop-details /></div>
+    }
+  }
+</main>

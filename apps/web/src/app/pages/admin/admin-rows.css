@@ -1,0 +1,65 @@
+/* Product and shelf rows: thumbnails, the shown/hidden switch and the price and stock editor. */
+.rows { list-style: none; margin: 0; padding: 0; }
+.row {
+  display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 16px; align-items: center;
+  padding: 12px 0; border-bottom: 2px dotted var(--paper-step);
+}
+.row--shelf { grid-template-columns: minmax(0, 1fr) auto; }
+.row__picture {
+  width: 56px; aspect-ratio: 1; display: grid; place-items: center; overflow: hidden;
+  background: var(--paper-step); color: var(--bg); font-size: 26px; font-weight: 600;
+}
+.row__picture img { width: 100%; height: 100%; object-fit: cover; }
+.row--hidden .row__picture, .row--hidden .row__about { opacity: 0.5; }
+h3 { font-size: var(--step-body); font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+.row__about p { font-size: var(--step-small); color: var(--paper-muted); }
+.row__about .row__warn { color: var(--paper-ink); font-weight: 600; }
+
+/* Price and stock editor, opened under its product row. */
+.link {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer;
+  font-size: var(--step-small); font-weight: 600; color: var(--paper-ink); text-decoration: underline; text-underline-offset: 4px;
+}
+.row__about .link { min-height: 32px; justify-self: start; }
+.row__about { display: grid; }
+.editor { grid-column: 1 / -1; display: grid; gap: 12px; padding: 16px; background: var(--paper-step); }
+.editor__option { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; border: 0; }
+.editor__option legend { font-weight: 600; font-size: var(--step-small); padding: 0 0 6px; }
+.editor__option label { display: block; margin: 0 0 6px; }
+.editor__actions { display: flex; align-items: center; gap: 20px; }
+.editor__actions .button { margin: 0; }
+
+/* Products tab: search and shelf filter, the add form, stock flags. */
+.tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.tools input { flex: 1 1 220px; }
+.tools select { flex: 0 1 220px; }
+.add { padding: 16px; background: var(--paper-step); }
+.add h3 { font-size: var(--step-lead); }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.trio label { display: block; margin-bottom: 8px; }
+.tag { display: inline-block; margin-left: 6px; padding: 0 6px; border: 1px solid currentColor; font-size: 12px; font-weight: 600; color: var(--paper-ink); }
+.tag--out { background: var(--paper-ink); color: var(--paper); }
+.row__about .link--inline { display: inline; min-height: 0; }
+
+/* Show / hide switch: ink when shown, empty when hidden. */
+.switch {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0;
+  border: 0; background: none; cursor: pointer; font-size: var(--step-small); font-weight: 600;
+}
+.switch:disabled { opacity: 0.5; cursor: progress; }
+.switch__track {
+  position: relative; width: 48px; height: 26px; border: 2px solid var(--paper-ink); background: var(--paper);
+  transition: background-color var(--t-hover) ease;
+}
+.switch__knob {
+  position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: var(--paper-ink);
+  transition: transform var(--t-hover) var(--ease-out);
+}
+.switch[aria-checked='true'] .switch__track { background: var(--ink); }
+.switch[aria-checked='true'] .switch__knob { background: var(--bg); transform: translateX(22px); }
+.switch__text { min-width: 6.5em; text-align: left; }
+@media (max-width: 560px) { .trio { grid-template-columns: minmax(0, 1fr); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .switch__track, .switch__knob { transition: none; }
+}

@@ -1,0 +1,112 @@
+<main class="login">
+  <p class="login__mark arrive">{{ shop()?.shop_name ?? 'MJK Cart' }}</p>
+
+  <section class="slip arrive" style="--i: 1" aria-labelledby="login-title">
+    <div class="slip__main">
+      <p class="slip__from">From {{ shop()?.shop_name ?? 'MJK Cart' }}, packed by hand</p>
+      <h1 id="login-title">Log in</h1>
+
+      @switch (step()) {
+        @case ('password') {
+          <form (submit)="logIn($event)" novalidate>
+            <label for="login-username">Username or email</label>
+            <input
+              id="login-username"
+              type="text"
+              name="username"
+              autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+              [value]="username()"
+              (input)="username.set($any($event.target).value)"
+              [attr.aria-invalid]="error() ? true : null"
+              aria-describedby="login-error"
+            />
+            <label for="login-password">Password</label>
+            <div class="password">
+              <input
+                id="login-password"
+                [type]="showPassword() ? 'text' : 'password'"
+                name="password"
+                autocomplete="current-password"
+                [value]="password()"
+                (input)="password.set($any($event.target).value)"
+                [attr.aria-invalid]="error() ? true : null"
+                aria-describedby="login-error"
+              />
+              <button
+                type="button"
+                class="link password__toggle"
+                (click)="showPassword.set(!showPassword())"
+                [attr.aria-pressed]="showPassword()"
+              >
+                {{ showPassword() ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+            <button class="button" type="submit" [disabled]="busy()">
+              {{ busy() ? 'Logging in…' : 'Log in' }}
+            </button>
+            <p class="slip__links">
+              <button type="button" class="link" (click)="useCode()">Log in with an email code instead</button>
+            </p>
+          </form>
+        }
+        @case ('email') {
+          <form (submit)="sendCode($event)" novalidate>
+            <label for="login-email">Email</label>
+            <input
+              id="login-email"
+              type="email"
+              name="email"
+              autocomplete="email"
+              inputmode="email"
+              spellcheck="false"
+              placeholder="you@example.com"
+              [value]="email()"
+              (input)="email.set($any($event.target).value)"
+              [attr.aria-invalid]="error() ? true : null"
+              aria-describedby="login-error"
+            />
+            <button class="button" type="submit" [disabled]="busy()">
+              {{ busy() ? 'Sending…' : 'Send me a code' }}
+            </button>
+            <p class="slip__links">
+              <button type="button" class="link" (click)="usePassword()">Log in with a password</button>
+            </p>
+          </form>
+        }
+        @case ('code') {
+          <form (submit)="verify($event)" novalidate>
+            <p class="slip__note" role="status">{{ note() }}</p>
+            <label for="login-code">6-digit code</label>
+            <input
+              id="login-code"
+              class="num code"
+              type="text"
+              name="code"
+              autocomplete="one-time-code"
+              inputmode="numeric"
+              maxlength="6"
+              placeholder="000000"
+              [value]="code()"
+              (input)="onCode($any($event.target).value); $any($event.target).value = code()"
+              [attr.aria-invalid]="error() ? true : null"
+              aria-describedby="login-error"
+            />
+            <button class="button" type="submit" [disabled]="busy()">
+              {{ busy() ? 'Checking…' : 'Log in' }}
+            </button>
+            <p class="slip__links">
+              <button type="button" class="link" (click)="sendCode()" [disabled]="busy()">Send a new code</button>
+              <button type="button" class="link" (click)="useCode()">Use another email</button>
+            </p>
+          </form>
+        }
+      }
+
+      <p id="login-error" class="slip__error" role="alert">{{ error() }}</p>
+      <p class="slip__switch">New here? <a routerLink="/signup">Create an account</a></p>
+    </div>
+
+  </section>
+</main>

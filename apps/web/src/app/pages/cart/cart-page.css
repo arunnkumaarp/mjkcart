@@ -1,0 +1,49 @@
+.page { padding: 0 var(--margin) 96px; max-width: 1080px; margin: 0 auto; }
+h1 { font-size: var(--step-head); padding: 40px 0 32px; }
+
+.field { background: var(--paper); color: var(--paper-ink); padding: var(--gutter); }
+.state { display: grid; gap: 16px; justify-items: start; padding: 40px 0; color: var(--paper-muted); }
+
+.lines { list-style: none; margin: 0; padding: 0; }
+.line {
+  display: grid; align-items: center; gap: 12px 20px;
+  grid-template-columns: 88px minmax(0, 1fr) auto auto auto;
+  padding: 16px 0; border-bottom: 2px dotted var(--paper-step);
+}
+.line--busy { opacity: 0.6; }
+.line__picture {
+  width: 88px; aspect-ratio: 1; display: grid; place-items: center; overflow: hidden;
+  background: var(--paper-step); color: var(--bg); font-size: 40px; font-weight: 600;
+}
+.line__picture img { width: 100%; height: 100%; object-fit: cover; }
+.line__about { display: grid; gap: 2px; font-size: var(--step-small); color: var(--paper-muted); }
+h2 { font-size: var(--step-body); letter-spacing: -0.01em; line-height: 1.2; color: var(--paper-ink); }
+.line__warn { color: #b3261e; font-weight: 500; }
+
+.line__qty { display: inline-flex; align-items: center; border: 2px solid var(--paper-ink); }
+.line__qty button {
+  width: 44px; height: 44px; border: 0; background: none; cursor: pointer; font-size: 20px; font-weight: 600;
+}
+.line__qty button:disabled { opacity: 0.35; cursor: default; }
+.line__qty span { min-width: 32px; text-align: center; font-weight: 600; }
+.line__total { font-weight: 600; min-width: 80px; text-align: right; }
+
+.link {
+  min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer;
+  font-size: var(--step-small); font-weight: 500; text-decoration: underline; text-underline-offset: 4px;
+  display: inline-flex; align-items: center;
+}
+.error { min-height: 1.5em; padding-top: 8px; font-size: var(--step-small); font-weight: 500; color: #b3261e; }
+
+.summary { display: grid; gap: 8px; justify-items: end; padding-top: 16px; text-align: right; }
+.summary p:first-child { display: flex; gap: 16px; align-items: baseline; font-size: var(--step-body); }
+.summary strong { font-size: var(--step-title); font-weight: 600; letter-spacing: -0.02em; }
+.summary__note { font-size: var(--step-small); color: var(--paper-muted); }
+
+@media (max-width: 640px) {
+  .line { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .line__picture { width: 64px; font-size: 28px; }
+  .line__qty { grid-column: 2; justify-self: start; }
+  .line__total { grid-column: 3; grid-row: 1; }
+  .line .link { grid-column: 3; justify-self: end; }
+}

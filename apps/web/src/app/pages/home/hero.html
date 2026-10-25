@@ -1,7 +1,7 @@
 <header class="hero">
   <nav class="top" aria-label="Main">
-    <a class="top__account" routerLink="/login">Log in</a>
-    <a class="top__mark" routerLink="/" aria-label="{{ shop()?.shop_name ?? 'MJK Cart' }} home">
+    <button type="button" class="top__account" (click)="logout()">Log out</button>
+    <a class="top__mark" routerLink="/shop" aria-label="{{ shop()?.shop_name ?? 'MJK Cart' }} home">
       @if (shop()?.logo; as logo) {
         <img [src]="logo" alt="" height="28" />
       } @else {

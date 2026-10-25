@@ -1,0 +1,164 @@
+<section class="field" aria-labelledby="orders-title">
+  <div class="field__head">
+    <h2 id="orders-title">Orders</h2>
+    <button type="button" class="link" (click)="load(true); counts.refresh()" [disabled]="loading()">Refresh</button>
+  </div>
+
+  <div class="steps" role="group" aria-label="Show orders">
+    @for (v of views; track v.key) {
+      @let n = count(v.key);
+      <button type="button" class="step" [class.is-on]="view() === v.key && !q().trim()" [attr.aria-pressed]="view() === v.key" (click)="q.set(''); pick(v.key)">
+        {{ v.label }}
+        @if (n !== null) {
+          <span class="step__n num" [class.is-busy]="n > 0 && (v.key === 'confirmed' || v.key === 'packed')">{{ n }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  <form class="search" role="search" (submit)="search($event)">
+    <label for="order-q" class="visually-hidden">Search orders</label>
+    <input id="order-q" type="search" placeholder="Order number, name, phone or pincode" [value]="q()" (input)="q.set($any($event.target).value)" />
+    <button class="button" type="submit">Search</button>
+  </form>
+
+  <p class="note" role="status">{{ note() }}</p>
+  <p class="error" role="alert">{{ error() }}</p>
+
+  @if (loading() && !orders().length) {
+    <p class="hint" role="status">Fetching orders…</p>
+  } @else if (failed()) {
+    <div class="state" role="alert">
+      <p>We couldn’t load the orders.</p>
+      <button type="button" class="button" (click)="load(true)">Try again</button>
+    </div>
+  } @else if (!orders().length) {
+    <p class="hint">{{ emptyText() }}</p>
+  } @else {
+    @if (q().trim()) {
+      <p class="hint num">{{ total() }} {{ total() === 1 ? 'order matches' : 'orders match' }} “{{ q().trim() }}”</p>
+    }
+    <ul class="orders" role="list">
+      @for (o of orders(); track o.number) {
+        <li class="order">
+          <div class="order__top">
+            <p><strong class="num">{{ o.number }}</strong><span class="hint">&nbsp;· {{ o.created_at | date: 'd MMM, h:mm a' }}</span></p>
+            <span class="badge" [attr.data-status]="o.status">{{ label[o.status] ?? o.status_label }}</span>
+          </div>
+
+          <div class="order__body">
+            <div class="order__who">
+              <p><strong>{{ o.ship_name }}</strong></p>
+              <p class="num">
+                <a [href]="'tel:' + o.ship_phone">{{ o.ship_phone }}</a> ·
+                <a [href]="whatsapp(o.ship_phone)" target="_blank" rel="noopener">WhatsApp</a>
+              </p>
+              <p class="hint">
+                {{ o.ship_line1 }}{{ o.ship_line2 ? ', ' + o.ship_line2 : '' }}{{ o.ship_landmark ? ', near ' + o.ship_landmark : '' }},
+                {{ o.ship_city }}, {{ o.ship_state }} <strong class="num">{{ o.ship_pincode }}</strong>
+              </p>
+            </div>
+
+            <div class="order__what">
+              <ul class="items" role="list">
+                @for (i of o.items; track i.id) {
+                  <li><span class="num">{{ i.quantity }} ×</span> {{ i.product_name }}{{ i.label ? ' (' + i.label + ')' : '' }}</li>
+                }
+              </ul>
+              <p class="num"><strong>{{ money(o.total) }}</strong><span class="hint">&nbsp;· {{ items(o) }} {{ items(o) === 1 ? 'item' : 'items' }}</span></p>
+              @if (o.payment_method === 'cod') {
+                @if (o.status !== 'cancelled' && o.status !== 'delivered' && o.status !== 'returned') {
+                  <p class="pay pay--cod">Cash on delivery: collect {{ money(o.total) }}</p>
+                } @else {
+                  <p class="hint">Cash on delivery</p>
+                }
+              } @else if (o.status === 'payment_pending') {
+                <p class="pay">{{ o.payment?.status === 'submitted' ? 'UPI: buyer says they paid. Check it.' : 'UPI: not paid yet' }}</p>
+              } @else {
+                <p class="hint">Paid by UPI</p>
+              }
+              @if (o.tracking_number) {
+                <p class="hint">{{ o.courier_name }} · <span class="num">{{ o.tracking_number }}</span></p>
+              }
+            </div>
+          </div>
+
+          @if (shipping() === o.number) {
+            <form class="ship" (submit)="ship($event, o)" novalidate>
+              <div class="pair">
+                <div>
+                  <label [for]="'courier-' + o.number">Courier</label>
+                  <input [id]="'courier-' + o.number" type="text" list="couriers" placeholder="India Post" [value]="courier()" (input)="courier.set($any($event.target).value)" />
+                </div>
+                <div>
+                  <label [for]="'track-' + o.number">Tracking number</label>
+                  <input [id]="'track-' + o.number" class="num" type="text" [value]="tracking()" (input)="tracking.set($any($event.target).value)" />
+                </div>
+              </div>
+              <div class="actions">
+                <button class="button" type="submit" [disabled]="working() === o.number">{{ working() === o.number ? 'Saving…' : 'Mark shipped' }}</button>
+                <button type="button" class="link" (click)="shipping.set(null)">Back</button>
+              </div>
+            </form>
+          } @else if (confirming()?.number === o.number) {
+            @let c = confirming()!;
+            <div class="ship" role="alertdialog" [attr.aria-label]="(c.status === 'cancelled' ? 'Cancel ' : 'Mark returned ') + o.number">
+              @if (c.status === 'cancelled') {
+                <p><strong>Cancel {{ o.number }}?</strong> The buyer is told, and the items go back in stock. This can’t be undone.</p>
+              } @else {
+                <p><strong>Mark {{ o.number }} returned?</strong> Use this when the parcel came back to you. Stock isn’t added back, so check the items first. This can’t be undone.</p>
+              }
+              <div class="actions">
+                <button class="button button--danger" type="button" (click)="move(o, c.status)" [disabled]="working() === o.number">
+                  {{ working() === o.number ? 'Saving…' : c.status === 'cancelled' ? 'Yes, cancel the order' : 'Yes, it came back' }}
+                </button>
+                <button type="button" class="link" (click)="confirming.set(null)">No, go back</button>
+              </div>
+            </div>
+          } @else {
+            <div class="actions">
+              @switch (o.status) {
+                @case ('confirmed') {
+                  <button class="button" type="button" (click)="move(o, 'packed')" [disabled]="working() === o.number">
+                    {{ working() === o.number ? 'Saving…' : 'Mark packed' }}
+                  </button>
+                }
+                @case ('packed') {
+                  <button class="button" type="button" (click)="startShip(o)">Mark shipped…</button>
+                }
+                @case ('shipped') {
+                  <button class="button" type="button" (click)="move(o, 'delivered')" [disabled]="working() === o.number">
+                    {{ working() === o.number ? 'Saving…' : 'Mark delivered' }}
+                  </button>
+                }
+                @case ('payment_pending') {
+                  @if (o.payment?.status === 'submitted') {
+                    <button class="button" type="button" (click)="openPayments.emit()">Check the payment</button>
+                  }
+                }
+              }
+              @if (o.status === 'confirmed' || o.status === 'packed') {
+                <button type="button" class="link" (click)="print(o)">Print packing slip</button>
+              }
+              @if (o.next_statuses.includes('cancelled')) {
+                <button type="button" class="link" (click)="confirm(o, 'cancelled')">Cancel order</button>
+              }
+              @if (o.next_statuses.includes('returned')) {
+                <button type="button" class="link" (click)="confirm(o, 'returned')">Mark returned</button>
+              }
+            </div>
+          }
+        </li>
+      }
+    </ul>
+    @if (orders().length < total()) {
+      <button type="button" class="link" (click)="load(false)" [disabled]="loading()">{{ loading() ? 'Loading…' : 'Show more orders' }}</button>
+    }
+  }
+
+  <datalist id="couriers">
+    @for (c of couriers(); track c.id) {
+      <option [value]="c.name"></option>
+    }
+  </datalist>
+</section>

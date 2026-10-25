@@ -5,10 +5,10 @@
   padding: 0 var(--margin); font-size: var(--step-small); font-weight: 500;
 }
 .top a { text-decoration: none; }
-.top a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.top a:hover, .top__account:hover { text-decoration: underline; text-underline-offset: 4px; }
 .top__mark { grid-column: 2; font-size: var(--step-lead); font-weight: 600; letter-spacing: -0.02em; }
 .top__mark img { height: 28px; width: auto; }
-.top__account { justify-self: start; }
+.top__account { justify-self: start; min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; font: inherit; }
 .top__cart { justify-self: end; }
 
 .title { text-align: center; padding: 0 var(--margin); }

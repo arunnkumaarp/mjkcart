@@ -1,0 +1,86 @@
+<mjk-top-bar />
+
+<main class="page">
+  <h1>Your cart</h1>
+
+  <section class="field" aria-label="Items in your cart">
+    @if (cart.loading() && !cart.data()) {
+      <p class="state" role="status">Opening your cart…</p>
+    } @else if (cart.failed() && !cart.data()) {
+      <div class="state" role="alert">
+        <p>We couldn’t open your cart just now.</p>
+        <button type="button" class="button" (click)="cart.load()">Try again</button>
+      </div>
+    } @else if (!cart.items().length) {
+      <div class="state">
+        <p>Your cart is empty.</p>
+        <a class="button" routerLink="/shop">Go to the shop</a>
+      </div>
+    } @else {
+      <ul class="lines" role="list">
+        @for (item of cart.items(); track item.id) {
+          <li class="line" [class.line--busy]="cart.working() === item.id">
+            <div class="line__picture">
+              @if (item.image) {
+                <img [src]="item.image" alt="" />
+              } @else {
+                <span aria-hidden="true">{{ item.product_name.charAt(0) }}</span>
+              }
+            </div>
+            <div class="line__about">
+              <h2>{{ item.product_name }}</h2>
+              @if (item.label) {
+                <p class="line__label">{{ item.label }}</p>
+              }
+              <p class="num">{{ money(item.price) }} each</p>
+              @if (!item.available) {
+                <p class="line__warn">No longer available. Please take it out.</p>
+              }
+            </div>
+            <div class="line__qty" role="group" [attr.aria-label]="'Quantity of ' + item.product_name">
+              <button
+                type="button"
+                (click)="step(item, -1)"
+                [disabled]="cart.working() === item.id"
+                [attr.aria-label]="'One less ' + item.product_name"
+              >
+                −
+              </button>
+              <span class="num" aria-live="polite">{{ item.quantity }}</span>
+              <button
+                type="button"
+                (click)="step(item, 1)"
+                [disabled]="cart.working() === item.id || item.quantity >= item.stock"
+                [attr.aria-label]="'One more ' + item.product_name"
+              >
+                +
+              </button>
+            </div>
+            <p class="line__total num">{{ money(lineTotal(item)) }}</p>
+            <button
+              type="button"
+              class="link"
+              (click)="remove(item)"
+              [disabled]="cart.working() === item.id"
+              [attr.aria-label]="'Remove ' + item.product_name + ' from cart'"
+            >
+              Remove
+            </button>
+          </li>
+        }
+      </ul>
+
+      <p class="error" role="alert">{{ error() }}</p>
+
+      <div class="summary">
+        <p>
+          Subtotal <span class="num">({{ cart.count() }} {{ cart.count() === 1 ? 'item' : 'items' }})</span>
+          <strong class="num">{{ money(cart.data()?.subtotal) }}</strong>
+        </p>
+        <p class="summary__note">Delivery and payment (UPI or cash on delivery) are chosen at checkout.</p>
+        <a class="button" routerLink="/checkout">Checkout</a>
+        <a class="link" routerLink="/shop">Keep shopping</a>
+      </div>
+    }
+  </section>
+</main>

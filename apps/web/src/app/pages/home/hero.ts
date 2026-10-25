@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
+import { Auth } from '../../core/auth';
 import { Cart } from '../../core/cart';
 import { Store } from '../../core/store';
 import { money } from '../../shared/money';
@@ -16,6 +17,8 @@ import { postalZone } from '../../shared/pincode';
 })
 export class Hero {
   private store = inject(Store);
+  private auth = inject(Auth);
+  private router = inject(Router);
   readonly cart = inject(Cart);
   readonly shop = this.store.shop;
 
@@ -39,6 +42,11 @@ export class Hero {
     if (!s) return '';
     return s.cod_enabled ? `Cash on delivery up to ${money(s.cod_max_order)}, or prepaid by UPI` : 'Prepaid by UPI';
   });
+
+  logout() {
+    this.auth.logout();
+    void this.router.navigateByUrl('/');
+  }
 
   onPincode(value: string) {
     this.pincode.set(value.replace(/\D/g, '').slice(0, 6));

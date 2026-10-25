@@ -1,0 +1,109 @@
+<mjk-top-bar />
+
+<main class="page">
+  <header class="page__head">
+    <h1>Sales</h1>
+    <div class="periods" role="group" aria-label="Period">
+      @for (p of periods; track p.days) {
+        <button type="button" class="chip" [class.is-on]="days() === p.days" [attr.aria-pressed]="days() === p.days" (click)="pick(p.days)">
+          {{ p.label }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (loading() && !summary()) {
+    <p class="state" role="status">Adding up the sales…</p>
+  } @else if (failed()) {
+    <div class="state" role="alert">
+      <p>We couldn’t load the sales just now.</p>
+      <button type="button" class="button" (click)="load()">Try again</button>
+    </div>
+  } @else if (summary(); as s) {
+    <section class="tiles" aria-label="Totals for the period" [class.is-busy]="loading()">
+      <div class="tile tile--hero">
+        <p>Revenue</p>
+        <strong class="num">{{ money(s.revenue) }}</strong>
+        <span class="hint">incl. delivery and fees</span>
+      </div>
+      <div class="tile"><p>Orders</p><strong class="num">{{ s.orders }}</strong></div>
+      <div class="tile"><p>Items sold</p><strong class="num">{{ s.items_sold }}</strong></div>
+      <div class="tile"><p>Average order</p><strong class="num">{{ money(s.average_order) }}</strong></div>
+      <div class="tile">
+        <p>Paid by</p>
+        <span class="num">UPI {{ money(s.upi.revenue) }} · {{ s.upi.orders }}</span>
+        <span class="num">Cash on delivery {{ money(s.cod.revenue) }} · {{ s.cod.orders }}</span>
+      </div>
+      <div class="tile">
+        <p>Waiting on the team now</p>
+        <span class="num">{{ s.payments_to_check }} payments to check</span>
+        <span class="num">{{ s.to_pack }} to pack · {{ s.to_ship }} to ship</span>
+        @if (s.payments_to_check) {
+          <a routerLink="/admin">Check payments</a>
+        }
+      </div>
+    </section>
+
+    <section class="field" aria-labelledby="trend-title">
+      <h2 id="trend-title">Revenue over time</h2>
+      <mjk-sales-chart [days]="daily()" />
+      @if (s.cancelled || s.returned) {
+        <p class="hint num">Not counted: {{ s.cancelled }} cancelled, {{ s.returned }} returned.</p>
+      }
+    </section>
+
+    <div class="two">
+      <section class="field" aria-labelledby="cat-title">
+        <h2 id="cat-title">Sales by category</h2>
+        @if (!categories().length) {
+          <p class="hint">No sales in this period yet.</p>
+        } @else {
+          <table>
+            <thead>
+              <tr><th scope="col">Category</th><th scope="col" class="r">Items</th><th scope="col" class="r">Orders</th><th scope="col" class="r">Revenue</th></tr>
+            </thead>
+            <tbody>
+              @for (c of categories(); track c.category) {
+                <tr>
+                  <td>
+                    {{ c.category }}
+                    <span class="share" aria-hidden="true"><span [style.width.%]="share(c.revenue)"></span></span>
+                    <span class="hint num">{{ share(c.revenue) }}% of item sales</span>
+                  </td>
+                  <td class="num r">{{ c.quantity }}</td>
+                  <td class="num r">{{ c.orders }}</td>
+                  <td class="num r"><strong>{{ money(c.revenue) }}</strong></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <p class="hint">Item prices before coupons and delivery, so these add up to a little less than revenue.</p>
+        }
+      </section>
+
+      <section class="field" aria-labelledby="top-title">
+        <h2 id="top-title">Best sellers</h2>
+        @if (!top().length) {
+          <p class="hint">No sales in this period yet.</p>
+        } @else {
+          <table>
+            <thead><tr><th scope="col">Product</th><th scope="col" class="r">Sold</th><th scope="col" class="r">Revenue</th></tr></thead>
+            <tbody>
+              @for (t of top(); track t.product_name + t.label) {
+                <tr>
+                  <td>{{ t.product_name }}{{ t.label ? ' (' + t.label + ')' : '' }}</td>
+                  <td class="num r">{{ t.quantity }}</td>
+                  <td class="num r">{{ money(t.revenue) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+    </div>
+
+    <mjk-product-sales [rows]="products()" />
+  }
+
+  <mjk-buyers />
+</main>

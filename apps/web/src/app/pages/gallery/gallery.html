@@ -1,0 +1,124 @@
+<mjk-top-bar />
+
+<main class="gallery">
+  <header class="gallery__head">
+    <h1>{{ current()?.name ?? shop()?.shop_name ?? 'Shop' }}</h1>
+    @if (shop()?.tagline; as tagline) {
+      <p>{{ tagline }}</p>
+    }
+  </header>
+
+  @if (staff()) {
+    <p class="preview" role="note">
+      Preview: this is the shop as buyers see it. Products hidden from buyers are marked.
+      <a routerLink="/admin">Back to the admin desk</a>
+    </p>
+  }
+
+  @if (shelves().length > 1) {
+    <nav class="tabs" aria-label="Shelves">
+      <a class="tab" routerLink="/shop" [class.is-here]="!current()" [attr.aria-current]="!current() ? 'page' : null">All</a>
+      @for (s of shelves(); track s.id) {
+        <a
+          class="tab"
+          routerLink="/shop"
+          [queryParams]="{ shelf: s.slug }"
+          [class.is-here]="current()?.id === s.id"
+          [attr.aria-current]="current()?.id === s.id ? 'page' : null"
+          >{{ s.name }}{{ s.is_active ? '' : ' (hidden)' }}</a
+        >
+      }
+    </nav>
+  }
+
+  <section class="field" aria-label="Products">
+    @if (!loading() && !failed() && products().length) {
+      <div class="find" role="search">
+        <label for="shop-q" class="visually-hidden">Search the shop</label>
+        <input id="shop-q" type="search" placeholder="Search the shop" [value]="q()" (input)="q.set($any($event.target).value)" />
+        <label for="shop-sort" class="visually-hidden">Sort</label>
+        <select id="shop-sort" (change)="sort.set($any($event.target).value)">
+          <option value="">Newest first</option>
+          <option value="low">Price: low to high</option>
+          <option value="high">Price: high to low</option>
+        </select>
+      </div>
+      @if (q().trim()) {
+        <p class="found num" role="status">{{ shown().length }} {{ shown().length === 1 ? 'product' : 'products' }} for “{{ q().trim() }}”</p>
+      }
+    }
+    @if (loading()) {
+      <p class="state" role="status">Bringing the shelf out…</p>
+    } @else if (failed()) {
+      <div class="state" role="alert">
+        <p>We couldn’t load the products just now.</p>
+        <button type="button" class="button" (click)="load()">Try again</button>
+      </div>
+    } @else if (!shown().length) {
+      @if (q().trim()) {
+        <div class="state">
+          <p>Nothing matches “{{ q().trim() }}”. Try another word.</p>
+          <button type="button" class="button" (click)="q.set('')">Show everything</button>
+        </div>
+      } @else {
+        <p class="state">Nothing on this shelf yet. New stock is on its way.</p>
+      }
+    } @else {
+      <ul class="grid" role="list">
+        @for (product of shown(); track product.id) {
+          @let variant = pick(product);
+          <li class="card" [class.card--hidden]="hiddenFromBuyers(product)">
+            <a class="card__picture" [routerLink]="['/shop', product.slug]" [attr.aria-label]="'See ' + product.name">
+              @if (product.images[0]; as image) {
+                <img [src]="image.image" [alt]="image.alt || product.name" loading="lazy" />
+              } @else {
+                <span class="card__initial" aria-hidden="true">{{ product.name.charAt(0) }}</span>
+              }
+              @if (hiddenFromBuyers(product)) {
+                <span class="stamp">Hidden from buyers</span>
+              } @else if (variant && off(variant)) {
+                <span class="stamp">{{ off(variant) }}% off</span>
+              }
+            </a>
+            <h2><a [routerLink]="['/shop', product.slug]">{{ product.name }}</a></h2>
+            <p class="card__text">{{ product.description }}</p>
+            <p class="card__price">
+              @if (variant) {
+                <strong class="num">{{ money(variant.price) }}</strong>
+                @if (off(variant)) {
+                  <s class="num">{{ money(variant.mrp) }}</s>
+                }
+              } @else {
+                <strong class="num">{{ money(product.price_from) }}</strong>
+              }
+            </p>
+            @if (staff()) {
+              <p class="card__admin">
+                <span class="num">{{ stock(product) }} in stock</span>
+                <a routerLink="/admin">Edit on admin desk</a>
+              </p>
+            } @else if (variant) {
+              <button
+                type="button"
+                class="button card__add"
+                (click)="add(product)"
+                [disabled]="cart.working() === variant.id"
+                [attr.aria-label]="'Add ' + product.name + ' to cart'"
+              >
+                {{ cart.working() === variant.id ? 'Adding…' : 'Add to cart' }}
+              </button>
+              <p class="card__note" role="status">
+                {{ notes()[product.id] ?? '' }}
+                @if (inCart(variant)) {
+                  <a routerLink="/cart">{{ inCart(variant) }} in your cart</a>
+                }
+              </p>
+            } @else {
+              <p class="card__out">Sold out for now</p>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</main>

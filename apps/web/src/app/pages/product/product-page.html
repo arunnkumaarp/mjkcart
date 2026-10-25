@@ -1,0 +1,108 @@
+<mjk-top-bar />
+
+<main class="page">
+  @if (loading() && !product()) {
+    <p class="state" role="status">Finding the product…</p>
+  } @else if (failed() || !product()) {
+    <div class="state field" role="alert">
+      <p>We couldn’t find that product. It may have sold out or been taken off the shelf.</p>
+      <a class="button" routerLink="/shop">Back to the shop</a>
+    </div>
+  } @else {
+    @let p = product()!;
+    @let v = variant();
+    <nav class="crumbs" aria-label="You are here">
+      <a routerLink="/shop">Shop</a>
+      @if (shelf(); as s) {
+        <span aria-hidden="true">/</span>
+        <a routerLink="/shop" [queryParams]="{ shelf: s.slug }">{{ s.name }}</a>
+      }
+    </nav>
+
+    <article class="layout">
+      <div class="photos">
+        <div class="photo">
+          @if (p.images[photo()]; as image) {
+            <img [src]="image.image" [alt]="image.alt || p.name" />
+          } @else {
+            <span class="initial" aria-hidden="true">{{ p.name.charAt(0) }}</span>
+          }
+          @if (v && off(v)) {
+            <span class="stamp">{{ off(v) }}% off</span>
+          }
+        </div>
+        @if (p.images.length > 1) {
+          <div class="thumbs" role="group" aria-label="Photos">
+            @for (image of p.images; track image.id; let i = $index) {
+              <button type="button" class="thumb" [class.is-on]="photo() === i" [attr.aria-pressed]="photo() === i" [attr.aria-label]="'Photo ' + (i + 1)" (click)="photo.set(i)">
+                <img [src]="image.image" alt="" />
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="about field">
+        <h1>{{ p.name }}</h1>
+        @if (v) {
+          <p class="price">
+            <strong class="num">{{ money(v.price) }}</strong>
+            @if (off(v)) {
+              <s class="num">{{ money(v.mrp) }}</s>
+              <span class="save num">You save {{ money(+v.mrp! - +v.price) }}</span>
+            }
+          </p>
+        }
+
+        @if (options().length > 1) {
+          <fieldset class="options">
+            <legend>Choose</legend>
+            @for (o of options(); track o.id) {
+              <button type="button" class="option" [class.is-on]="chosen() === o.id" [attr.aria-pressed]="chosen() === o.id" [disabled]="!o.stock" (click)="choose(o)">
+                {{ o.label || money(o.price) }}
+                @if (!o.stock) {
+                  <span class="hint">sold out</span>
+                }
+              </button>
+            }
+          </fieldset>
+        }
+
+        @if (staff()) {
+          <p class="hint num">{{ left() }} in stock · <a routerLink="/admin" [queryParams]="{ tab: 'products' }">Edit on the admin desk</a></p>
+        } @else if (v && left() > 0) {
+          @if (few(v)) {
+            <p class="few">Only {{ left() }} left</p>
+          }
+          <div class="buy">
+            <div class="qty" role="group" aria-label="How many">
+              <button type="button" (click)="step(-1)" [disabled]="quantity() <= 1" aria-label="One less">−</button>
+              <span class="num" aria-live="polite">{{ quantity() }}</span>
+              <button type="button" (click)="step(1)" [disabled]="quantity() >= left()" aria-label="One more">+</button>
+            </div>
+            <button type="button" class="button" (click)="add()" [disabled]="cart.working() === v.id">
+              {{ cart.working() === v.id ? 'Adding…' : 'Add to cart' }}
+            </button>
+          </div>
+          <p class="note" role="status">
+            {{ note() }}
+            @if (inCart()) {
+              <a routerLink="/cart">{{ inCart() }} in your cart · Go to cart</a>
+            }
+          </p>
+          <p class="error" role="alert">{{ error() }}</p>
+        } @else {
+          <p class="out">Sold out for now. Check back soon.</p>
+        }
+
+        @if (p.description) {
+          <div class="desc">
+            <h2>About it</h2>
+            <p>{{ p.description }}</p>
+          </div>
+        }
+        <a class="link" routerLink="/shop" [queryParams]="shelf() ? { shelf: shelf()!.slug } : {}">← Keep shopping</a>
+      </div>
+    </article>
+  }
+</main>

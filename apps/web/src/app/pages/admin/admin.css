@@ -1,0 +1,61 @@
+.desk { padding: 0 var(--margin) 96px; max-width: 1240px; margin: 0 auto; }
+.desk__head { display: grid; gap: 12px; padding: 32px 0 24px; }
+h1 { font-size: var(--step-head); }
+.stamp {
+  justify-self: start; padding: 4px 12px; transform: rotate(-2deg);
+  background: var(--ink); color: var(--bg); font-size: var(--step-small); font-weight: 600;
+}
+
+.desk__grid { display: grid; gap: var(--gutter); grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; }
+.desk__col { display: grid; gap: var(--gutter); align-content: start; }
+:host { display: block; }
+.field { background: var(--paper); color: var(--paper-ink); padding: var(--gutter); display: grid; gap: 16px; }
+.field__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
+.field__head p { font-size: var(--step-small); color: var(--paper-muted); }
+h2 { font-size: var(--step-title); }
+.hint { font-size: var(--step-small); color: var(--paper-muted); }
+.filter { display: flex; align-items: center; gap: 10px; font-size: var(--step-small); font-weight: 600; }
+.filter select { width: auto; }
+.state { display: grid; gap: 16px; justify-items: start; color: var(--paper-muted); }
+
+form { display: grid; gap: 8px; }
+label { font-size: var(--step-small); font-weight: 600; margin-top: 6px; }
+input:not([type='checkbox']), textarea, select {
+  width: 100%; min-height: 44px; padding: 8px 10px; border: 2px solid var(--paper-ink); border-radius: 0;
+  background: var(--paper); font-family: inherit; font-size: var(--step-body);
+}
+input[type='file'] { border-style: dashed; font-size: var(--step-small); }
+textarea { resize: vertical; }
+.inline { display: flex; gap: 8px; }
+.inline input { flex: 1; }
+.inline .button { margin: 0; min-height: 44px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pair label { display: block; margin-bottom: 8px; }
+.check { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 500; }
+.check input { width: 20px; height: 20px; accent-color: var(--ink); }
+form .button { justify-self: start; margin-top: 8px; }
+.button:disabled { opacity: 0.6; cursor: progress; transform: none; }
+.note { font-size: var(--step-small); font-weight: 500; }
+.error { font-size: var(--step-small); font-weight: 500; color: #b3261e; }
+.note:empty, .error:empty { display: none; }
+
+/* One tab per job, as folder tabs on top of the white field. */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.tab {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 22px;
+  background: var(--surface-soft); color: var(--ink); text-decoration: none; font-weight: 600;
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 100%, 0 100%);
+}
+.tab:hover { text-decoration: underline; text-underline-offset: 4px; }
+.tab.is-here { background: var(--paper); }
+.tab__n { min-width: 1.6em; padding: 0 6px; text-align: center; background: var(--ink); color: var(--bg); font-size: var(--step-small); }
+.one { max-width: 720px; }
+
+@media (max-width: 860px) {
+  .desk__grid { grid-template-columns: minmax(0, 1fr); }
+}
+/* On a phone the tabs stay on one line and swipe sideways, like an app's tab strip. */
+@media (max-width: 719px) {
+  .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--margin) * -1); padding-inline: var(--margin); }
+  .tab { flex: none; padding: 0 18px; }
+}
